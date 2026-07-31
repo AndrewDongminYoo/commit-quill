@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
+  <!-- Vane, closed against the shaft; the trailing zigzag reads as barbs. -->
+  <path d="M13.9 2.1C15 5.2 13.2 8.6 6.6 9.5l1.7-2.3-2.5.9 1.4-2.2z" fill="#424242"/>
+  <!-- Shaft, continuing past the vane into the nib. -->
+  <path d="M13.9 2.1 2.6 13.4" fill="none" stroke="#424242" stroke-width="1.1" stroke-linecap="round"/>
+</svg>
