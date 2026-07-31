@@ -61,17 +61,41 @@ export class LanguageModelError extends Error {
   }
 }
 
+/** Thrown when the user cancels a request, so callers can stay silent. */
+export class LanguageModelCancelledError extends Error {
+  constructor() {
+    super("The commit-message request was cancelled.");
+    this.name = "LanguageModelCancelledError";
+  }
+}
+
 export class FetchHttpClient implements HttpClient {
+  private readonly cancellation: AbortSignal | undefined;
+
+  constructor(cancellation?: AbortSignal) {
+    this.cancellation = cancellation;
+  }
+
   async post(request: HttpRequest): Promise<HttpResponse> {
+    const timeout = AbortSignal.timeout(30_000);
+    const signal =
+      this.cancellation === undefined
+        ? timeout
+        : AbortSignal.any([timeout, this.cancellation]);
     try {
       const response = await fetch(request.url, {
         method: "POST",
         headers: request.headers,
         body: request.body,
-        signal: AbortSignal.timeout(30_000),
+        signal,
       });
       return { status: response.status, body: await response.text() };
     } catch (error: unknown) {
+      // A user-initiated abort is not a failure — do not dress it up as one.
+      if (this.cancellation?.aborted === true) {
+        throw new LanguageModelCancelledError();
+      }
+
       throw new LanguageModelError(
         "The provider request failed before receiving a response.",
         error,

@@ -31,6 +31,8 @@ The generated subject is written into the Source Control input box, where you re
 
 Diffs are truncated at `autoCommitMsg.maxDiffCharacters` (64000 by default), and untracked files that are binary or larger than 128 KB are named rather than sent. You are told whenever either happens.
 
+Each provider call shows a cancellable progress notification. Cancelling aborts the in-flight request and ends the command without creating a commit.
+
 It follows a detected stable local commit convention.
 
 When no stable convention exists, it asks for a Conventional Commit subject.

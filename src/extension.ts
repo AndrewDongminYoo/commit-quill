@@ -4,6 +4,8 @@ import { defaultSnapshotLimits, hasChanges } from "./core/git";
 import type { SnapshotLimits } from "./core/types";
 import {
   createLanguageModel,
+  FetchHttpClient,
+  LanguageModelCancelledError,
   providerNames,
   type ProviderName,
   type ProviderSettings,
@@ -14,6 +16,7 @@ import {
   type ProviderModelOption,
 } from "./provider-setup";
 import { resolveRepository } from "./vscode-git";
+import { ProgressReportingLanguageModel } from "./vscode-language-model";
 import { VsCodeCommitUserInterface } from "./vscode-user-interface";
 import { CommitWorkflow, type StagedOutput } from "./workflow/commit-workflow";
 
@@ -92,13 +95,24 @@ async function generateCommit(
     const stagedOutput: StagedOutput =
       repository !== undefined && !readCommitDirectly() ? "draft" : "commit";
 
+    const controller = new AbortController();
+    const model = new ProgressReportingLanguageModel(
+      createLanguageModel(settings, new FetchHttpClient(controller.signal)),
+      controller,
+    );
+
     await new CommitWorkflow(
-      createLanguageModel(settings),
+      model,
       new VsCodeCommitUserInterface(repository),
       readSnapshotLimits(),
       stagedOutput,
     ).run(workspacePath);
   } catch (error: unknown) {
+    // Cancelling is a choice the user already made; do not report it back.
+    if (error instanceof LanguageModelCancelledError) {
+      return;
+    }
+
     const message =
       error instanceof Error
         ? error.message

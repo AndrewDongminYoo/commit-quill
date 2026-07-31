@@ -3,6 +3,7 @@ import { test } from "mocha";
 
 import {
   createLanguageModel,
+  FetchHttpClient,
   type CommitContext,
   type HttpClient,
   type HttpRequest,
@@ -175,5 +176,20 @@ test("falls back to the raw body when it is not a provider error envelope", asyn
   await assert.rejects(
     model.generateSubject(context),
     /HTTP 502\. upstream request timeout/,
+  );
+});
+
+test("reports a cancelled request rather than a transport failure", async () => {
+  const controller = new AbortController();
+  controller.abort();
+
+  // The signal is already aborted, so fetch rejects before touching the network.
+  await assert.rejects(
+    new FetchHttpClient(controller.signal).post({
+      url: "https://example.invalid/",
+      headers: {},
+      body: "{}",
+    }),
+    (error: Error) => error.name === "LanguageModelCancelledError",
   );
 });
