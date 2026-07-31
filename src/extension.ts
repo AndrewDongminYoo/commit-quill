@@ -13,6 +13,7 @@ import {
   nextProviderSetupStep,
   type ProviderModelOption,
 } from "./provider-setup";
+import { resolveRepository } from "./vscode-git";
 import { VsCodeCommitUserInterface } from "./vscode-user-interface";
 import { CommitWorkflow } from "./workflow/commit-workflow";
 
@@ -43,8 +44,10 @@ class ExtensionInvariantError extends Error {
 
 export function activate(context: ExtensionRuntimeContext): void {
   context.subscriptions.push(
-    vscode.commands.registerCommand("auto-commit-msg.generateCommit", () =>
-      generateCommit(context),
+    vscode.commands.registerCommand(
+      "auto-commit-msg.generateCommit",
+      // The scm/title menu passes the Source Control the user clicked.
+      (scmArgument: unknown) => generateCommit(context, scmArgument),
     ),
     vscode.commands.registerCommand("auto-commit-msg.configureProvider", () =>
       configureProvider(context),
@@ -60,12 +63,16 @@ export function activate(context: ExtensionRuntimeContext): void {
 
 export function deactivate(): void {}
 
-async function generateCommit(context: ExtensionRuntimeContext): Promise<void> {
+async function generateCommit(
+  context: ExtensionRuntimeContext,
+  scmArgument?: unknown,
+): Promise<void> {
   try {
-    const workspacePath = activeWorkspacePath();
+    const repository = await resolveRepository(scmArgument);
+    const workspacePath = repository?.rootUri.fsPath ?? activeWorkspacePath();
     if (workspacePath === undefined) {
       await vscode.window.showErrorMessage(
-        "Open a workspace folder before generating a commit.",
+        "Open a Git repository before generating a commit.",
       );
       return;
     }
