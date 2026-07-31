@@ -115,6 +115,18 @@
           "default": 64000,
           "scope": "application",
           "description": "Upper bound on the diff characters sent to the provider. Larger diffs are truncated and you are told when that happens."
+        },
+        "commitQuill.splitUnstagedChanges": {
+          "type": "boolean",
+          "default": true,
+          "scope": "application",
+          "description": "When nothing is staged, propose splitting the working tree into several commits. Turn this off to get one commit message describing everything instead, written to the Source Control input box without staging anything."
+        },
+        "commitQuill.splitModel": {
+          "type": "string",
+          "default": "",
+          "scope": "application",
+          "description": "Model used only for the split-commit proposal, on the same provider as the main model. Grouping files by why they changed is harder than summarising one staged diff, so a stronger model pays off here without costing more on ordinary commits. Leave empty to reuse the configured model."
         }
       }
     }

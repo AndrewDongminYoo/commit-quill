@@ -100,20 +100,26 @@ async function generateCommit(
       repository !== undefined && !readCommitDirectly() ? "draft" : "commit";
 
     const controller = new AbortController();
-    const model = new ProgressReportingLanguageModel(
-      createLanguageModel(settings, new FetchHttpClient(controller.signal)),
-      controller,
-    );
+    const client = new FetchHttpClient(controller.signal);
+    const build = (model: string): ProgressReportingLanguageModel =>
+      new ProgressReportingLanguageModel(
+        createLanguageModel({ ...settings, model }, client),
+        controller,
+      );
+
+    const configuration = vscode.workspace.getConfiguration("commitQuill");
+    const splitModel = configuration.get<string>("splitModel", "").trim();
 
     const outcome = await new CommitWorkflow(
-      model,
+      build(settings.model),
       new VsCodeCommitUserInterface(repository),
       {
         limits: readSnapshotLimits(),
         stagedOutput,
-        customInstructions: vscode.workspace
-          .getConfiguration("commitQuill")
-          .get<string>("customInstructions", ""),
+        customInstructions: configuration.get<string>("customInstructions", ""),
+        splitUnstaged: configuration.get<boolean>("splitUnstagedChanges", true),
+        // Same provider, so the stored key and the HTTP client both carry over.
+        splitModel: splitModel.length > 0 ? build(splitModel) : undefined,
       },
     ).run(workspacePath);
     await reportOutcome(outcome);

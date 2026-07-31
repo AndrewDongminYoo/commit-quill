@@ -202,3 +202,46 @@ test("names the commits already created when a split fails partway", async () =>
     /add feature/,
   );
 });
+
+test("describes the whole tree in one message when splitting is off", async () => {
+  const fixture = await createFixture();
+  await fixture.write("feature.ts", "export const feature = true;\n");
+  await fixture.write("docs.md", "# Documentation\n");
+  const model = new FakeLanguageModel("chore: touch two files", [
+    { subject: "feat: add feature", paths: ["feature.ts"] },
+  ]);
+  const userInterface = new FakeUserInterface(true, []);
+
+  const outcome = await new CommitWorkflow(model, userInterface, {
+    splitUnstaged: false,
+  }).run(fixture.repositoryPath);
+
+  assert.deepStrictEqual(outcome, { kind: "drafted" });
+  assert.strictEqual(userInterface.drafted, "chore: touch two files");
+  assert.strictEqual(model.requestedGroups, 0, "must not ask for a split");
+  // Nothing staged, nothing committed — that decision stays with the user.
+  assert.match(await fixture.output(["status", "--short"]), /^\?\? /m);
+  assert.match(
+    await fixture.output(["log", "-1", "--format=%s"]),
+    /chore: initialize fixture/,
+  );
+});
+
+test("asks the split model, not the main model, for the proposal", async () => {
+  const fixture = await createFixture();
+  await fixture.write("feature.ts", "export const feature = true;\n");
+  const main = new FakeLanguageModel("unused", []);
+  const split = new FakeLanguageModel("unused", [
+    { subject: "feat: add feature", paths: ["feature.ts"] },
+  ]);
+
+  const outcome = await new CommitWorkflow(
+    main,
+    new FakeUserInterface(true, ["feat: add feature"]),
+    { splitModel: split },
+  ).run(fixture.repositoryPath);
+
+  assert.deepStrictEqual(outcome, { kind: "committed", count: 1 });
+  assert.strictEqual(split.requestedGroups, 1);
+  assert.strictEqual(main.requestedGroups, 0);
+});

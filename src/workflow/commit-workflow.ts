@@ -70,6 +70,17 @@ export type WorkflowOptions = {
   readonly stagedOutput?: StagedOutput;
   /** Extra guidance appended to every prompt, e.g. a house convention. */
   readonly customInstructions?: string;
+  /** Whether an unstaged tree is proposed as several commits or described as one. */
+  readonly splitUnstaged?: boolean;
+  /**
+   * Model for the split proposal, when it should differ from `model`.
+   *
+   * Grouping several files by why they changed and naming each group is a
+   * markedly harder task than summarising one staged diff — a small model
+   * groups adequately but mislabels the types. Running the split on a stronger
+   * model without paying for it on every ordinary commit is worth one seam.
+   */
+  readonly splitModel?: CommitLanguageModel;
 };
 
 export class CommitWorkflow {
@@ -78,6 +89,8 @@ export class CommitWorkflow {
   readonly limits: SnapshotLimits;
   readonly stagedOutput: StagedOutput;
   readonly customInstructions: string | undefined;
+  readonly splitUnstaged: boolean;
+  readonly splitModel: CommitLanguageModel;
 
   constructor(
     model: CommitLanguageModel,
@@ -89,6 +102,8 @@ export class CommitWorkflow {
     this.limits = options.limits ?? defaultSnapshotLimits;
     this.stagedOutput = options.stagedOutput ?? "commit";
     this.customInstructions = options.customInstructions;
+    this.splitUnstaged = options.splitUnstaged ?? true;
+    this.splitModel = options.splitModel ?? model;
   }
 
   private context(
@@ -156,7 +171,17 @@ export class CommitWorkflow {
     cwd: string,
     snapshot: Extract<RepositorySnapshot, { readonly kind: "unstaged" }>,
   ): Promise<WorkflowOutcome> {
-    const groups = await this.model.proposeGroups(this.context(snapshot));
+    // Splitting off: describe the whole working tree in one message and hand it
+    // to the input box. Committing it would mean deciding what to stage, and
+    // that decision is the user's — this path never had their approval for it.
+    if (!this.splitUnstaged) {
+      await this.userInterface.draftMessage(
+        await this.model.generateMessage(this.context(snapshot)),
+      );
+      return { kind: "drafted" };
+    }
+
+    const groups = await this.splitModel.proposeGroups(this.context(snapshot));
     if (!(await this.userInterface.confirmSplit(groups))) {
       return { kind: "cancelled", count: 0 };
     }
