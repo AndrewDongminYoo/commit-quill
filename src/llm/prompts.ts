@@ -28,6 +28,10 @@ export function groupsPrompt(context: CommitContext): string {
     "Start another group only when a reviewer would want to review or revert that change separately: an unrelated fix, a second feature, a refactor that stands on its own.",
     "Files that changed for the same reason belong in one group even when they differ in directory, extension, or language — a test with the code it covers, a config with the feature that needs it, every file touched by one rename.",
     "Never split because the files are merely different files, and never split to make the groups look tidy.",
+    // The workflow commits groups in the order returned, so ordering is
+    // actionable rather than decorative. Whether a model actually honours it is
+    // the open question this line exists to answer.
+    "Return the groups in the order they should be committed: when one change caused or enabled another — a linter config and the files it rewrote, a rename and the call sites it broke — the cause comes first.",
     // The model picks a type from the majority of files in a group and
     // mislabels the rest — three trunk-formatted files became "docs" even
     // though one of them was a TypeScript test.
