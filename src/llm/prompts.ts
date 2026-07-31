@@ -28,6 +28,10 @@ export function groupsPrompt(context: CommitContext): string {
     "Start another group only when a reviewer would want to review or revert that change separately: an unrelated fix, a second feature, a refactor that stands on its own.",
     "Files that changed for the same reason belong in one group even when they differ in directory, extension, or language — a test with the code it covers, a config with the feature that needs it, every file touched by one rename.",
     "Never split because the files are merely different files, and never split to make the groups look tidy.",
+    // The model picks a type from the majority of files in a group and
+    // mislabels the rest — three trunk-formatted files became "docs" even
+    // though one of them was a TypeScript test.
+    "Pick a type that covers every file in the group, not just most of them: a group holding both prose and code is not a docs change, and a change that only reformats is a style change.",
     `Give each group a one-line subject. ${subjectRule(context)}`,
     'Return JSON only in this shape: {"groups":[{"subject":"...","paths":["..."]}]}.',
     "Use every changed path exactly once.",
