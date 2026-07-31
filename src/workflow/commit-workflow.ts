@@ -100,6 +100,7 @@ export class CommitWorkflow {
     return {
       diff: snapshot.diff,
       files: snapshot.files,
+      renames: snapshot.renames,
       convention: detectConvention(snapshot.subjects),
       customInstructions: this.customInstructions,
     };

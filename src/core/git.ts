@@ -3,7 +3,7 @@ import { readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { promisify } from "node:util";
 
-import type { RepositorySnapshot, SnapshotLimits } from "./types";
+import type { RenamedPath, RepositorySnapshot, SnapshotLimits } from "./types";
 
 const execFile = promisify(execFileCallback);
 
@@ -16,6 +16,8 @@ type GitStatusEntry = {
   readonly indexStatus: string;
   readonly worktreeStatus: string;
   readonly path: string;
+  /** Where a renamed or copied file came from. */
+  readonly originalPath?: string;
 };
 
 export class GitInputError extends Error {
@@ -57,6 +59,7 @@ export async function inspectRepository(
       kind: "staged",
       diff: capped.diff,
       files: stagedEntries.map((entry) => entry.path),
+      renames: renamesOf(stagedEntries),
       subjects: await recentSubjects(repositoryPath),
       notices: capped.notices,
     };
@@ -72,6 +75,7 @@ export async function inspectRepository(
     kind: "unstaged",
     diff: capped.diff,
     files: entries.map((entry) => entry.path),
+    renames: renamesOf(entries),
     subjects: await recentSubjects(repositoryPath),
     notices: [...unstaged.notices, ...capped.notices],
   };
@@ -128,13 +132,30 @@ function parseStatus(output: string): readonly GitStatusEntry[] {
       continue;
     }
 
-    entries.push({ indexStatus, worktreeStatus, path: part.slice(3) });
+    // With `-z` a rename is two fields, destination first: "R  new\0old\0".
     if (isRenameOrCopy(indexStatus, worktreeStatus)) {
       index += 1;
+      entries.push({
+        indexStatus,
+        worktreeStatus,
+        path: part.slice(3),
+        originalPath: parts[index],
+      });
+      continue;
     }
+
+    entries.push({ indexStatus, worktreeStatus, path: part.slice(3) });
   }
 
   return entries;
+}
+
+function renamesOf(entries: readonly GitStatusEntry[]): readonly RenamedPath[] {
+  return entries.flatMap((entry) =>
+    entry.originalPath === undefined
+      ? []
+      : [{ from: entry.originalPath, to: entry.path }],
+  );
 }
 
 function isRenameOrCopy(indexStatus: string, worktreeStatus: string): boolean {

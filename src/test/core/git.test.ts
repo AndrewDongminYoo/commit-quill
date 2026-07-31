@@ -89,3 +89,27 @@ test("truncates an oversized diff and says so", async () => {
     "The diff was truncated to 1000 characters, so later changes were not sent.",
   ]);
 });
+
+test("reports a staged rename without polluting the stageable path list", async () => {
+  const fixture = await createFixture();
+  await fixture.output(["mv", "README.md", "GUIDE.md"]);
+
+  const snapshot = await inspectRepository(fixture.repositoryPath);
+
+  assert.strictEqual(snapshot.kind, "staged");
+  // Only the destination is a path `git add` can take.
+  assert.deepStrictEqual(snapshot.files, ["GUIDE.md"]);
+  assert.deepStrictEqual(snapshot.renames, [
+    { from: "README.md", to: "GUIDE.md" },
+  ]);
+});
+
+test("leaves renames empty when nothing was renamed", async () => {
+  const fixture = await createFixture();
+  await fixture.write("notes.md", "unstaged\n");
+
+  const snapshot = await inspectRepository(fixture.repositoryPath);
+
+  assert.strictEqual(snapshot.kind, "unstaged");
+  assert.deepStrictEqual(snapshot.renames, []);
+});

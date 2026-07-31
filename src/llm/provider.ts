@@ -2,7 +2,7 @@ import { AnthropicLanguageModel } from "./anthropic";
 import { GeminiLanguageModel } from "./gemini";
 import { recordAt, stringAt } from "./json";
 import { OpenAiLanguageModel } from "./openai";
-import type { CommitConvention } from "../core/types";
+import type { CommitConvention, RenamedPath } from "../core/types";
 
 const MAX_ERROR_DETAIL = 300;
 
@@ -19,6 +19,7 @@ export type ProviderSettings = {
 export type CommitContext = {
   readonly diff: string;
   readonly files: readonly string[];
+  readonly renames?: readonly RenamedPath[];
   readonly convention: CommitConvention;
   readonly customInstructions?: string;
 };
