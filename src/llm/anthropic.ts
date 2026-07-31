@@ -3,6 +3,7 @@ import { z } from "zod";
 import { groupsPrompt, messagePrompt } from "./prompts";
 import {
   LanguageModelError,
+  MAX_OUTPUT_TOKENS,
   postForJson,
   requireMessage,
   type CommitContext,
@@ -47,7 +48,7 @@ export class AnthropicLanguageModel implements CommitLanguageModel {
       },
       body: JSON.stringify({
         model: this.settings.model,
-        max_tokens: 1_024,
+        max_tokens: MAX_OUTPUT_TOKENS,
         messages: [{ role: "user", content: prompt }],
       }),
     });

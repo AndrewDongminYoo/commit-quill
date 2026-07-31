@@ -79,6 +79,13 @@
           "scope": "application",
           "description": "The Gemini model name."
         },
+        "autoCommitMsg.customInstructions": {
+          "type": "string",
+          "default": "",
+          "scope": "application",
+          "editPresentation": "multilineText",
+          "description": "Extra instructions appended to every prompt, such as a house convention or a required issue trailer. These take precedence over the convention detected from recent commits."
+        },
         "autoCommitMsg.commitDirectly": {
           "type": "boolean",
           "default": false,

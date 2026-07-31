@@ -1,7 +1,6 @@
 import * as assert from "node:assert";
 import { afterEach, test } from "mocha";
 
-import { defaultSnapshotLimits } from "../../core/git";
 import type { CommitLanguageModel, CommitGroup } from "../../llm/provider";
 import {
   CommitWorkflow,
@@ -144,12 +143,9 @@ test("drafts the staged subject without committing when asked to", async () => {
   const model = new FakeLanguageModel("feat: draft this subject");
   const userInterface = new FakeUserInterface(true, []);
 
-  const outcome = await new CommitWorkflow(
-    model,
-    userInterface,
-    defaultSnapshotLimits,
-    "draft",
-  ).run(fixture.repositoryPath);
+  const outcome = await new CommitWorkflow(model, userInterface, {
+    stagedOutput: "draft",
+  }).run(fixture.repositoryPath);
 
   assert.deepStrictEqual(outcome, { kind: "drafted" });
   assert.strictEqual(userInterface.drafted, "feat: draft this subject");

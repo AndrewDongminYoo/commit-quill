@@ -9,9 +9,14 @@ export function groupsPrompt(context: CommitContext): string {
 }
 
 function conventionInstruction(context: CommitContext): string {
-  if (context.convention.kind === "existing") {
-    return `Follow these existing commit-subject examples:\n${context.convention.examples.join("\n")}`;
-  }
+  const detected =
+    context.convention.kind === "existing"
+      ? `Follow these existing commit-subject examples:\n${context.convention.examples.join("\n")}`
+      : "Use Conventional Commit format.";
 
-  return "Use Conventional Commit format.";
+  // Last, so the user's own rules win over the inferred convention.
+  const custom = context.customInstructions?.trim();
+  return custom === undefined || custom.length === 0
+    ? detected
+    : `${detected}\nFollow these instructions above all else:\n${custom}`;
 }

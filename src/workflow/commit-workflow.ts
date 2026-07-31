@@ -9,6 +9,7 @@ import { detectConvention } from "../core/convention";
 import type { RepositorySnapshot, SnapshotLimits } from "../core/types";
 import {
   firstLine,
+  type CommitContext,
   type CommitGroup,
   type CommitLanguageModel,
 } from "../llm/provider";
@@ -64,22 +65,44 @@ class WorkflowInvariantError extends Error {
   }
 }
 
+export type WorkflowOptions = {
+  readonly limits?: SnapshotLimits;
+  readonly stagedOutput?: StagedOutput;
+  /** Extra guidance appended to every prompt, e.g. a house convention. */
+  readonly customInstructions?: string;
+};
+
 export class CommitWorkflow {
   readonly model: CommitLanguageModel;
   readonly userInterface: CommitUserInterface;
   readonly limits: SnapshotLimits;
   readonly stagedOutput: StagedOutput;
+  readonly customInstructions: string | undefined;
 
   constructor(
     model: CommitLanguageModel,
     userInterface: CommitUserInterface,
-    limits: SnapshotLimits = defaultSnapshotLimits,
-    stagedOutput: StagedOutput = "commit",
+    options: WorkflowOptions = {},
   ) {
     this.model = model;
     this.userInterface = userInterface;
-    this.limits = limits;
-    this.stagedOutput = stagedOutput;
+    this.limits = options.limits ?? defaultSnapshotLimits;
+    this.stagedOutput = options.stagedOutput ?? "commit";
+    this.customInstructions = options.customInstructions;
+  }
+
+  private context(
+    snapshot: Extract<
+      RepositorySnapshot,
+      { readonly kind: "staged" | "unstaged" }
+    >,
+  ): CommitContext {
+    return {
+      diff: snapshot.diff,
+      files: snapshot.files,
+      convention: detectConvention(snapshot.subjects),
+      customInstructions: this.customInstructions,
+    };
   }
 
   async run(cwd: string): Promise<WorkflowOutcome> {
@@ -109,11 +132,7 @@ export class CommitWorkflow {
     cwd: string,
     snapshot: Extract<RepositorySnapshot, { readonly kind: "staged" }>,
   ): Promise<WorkflowOutcome> {
-    const message = await this.model.generateMessage({
-      diff: snapshot.diff,
-      files: snapshot.files,
-      convention: detectConvention(snapshot.subjects),
-    });
+    const message = await this.model.generateMessage(this.context(snapshot));
     // The input box holds a whole commit message, so any body survives here.
     if (this.stagedOutput === "draft") {
       await this.userInterface.draftMessage(message);
@@ -136,11 +155,7 @@ export class CommitWorkflow {
     cwd: string,
     snapshot: Extract<RepositorySnapshot, { readonly kind: "unstaged" }>,
   ): Promise<WorkflowOutcome> {
-    const groups = await this.model.proposeGroups({
-      diff: snapshot.diff,
-      files: snapshot.files,
-      convention: detectConvention(snapshot.subjects),
-    });
+    const groups = await this.model.proposeGroups(this.context(snapshot));
     if (!(await this.userInterface.confirmSplit(groups))) {
       return { kind: "cancelled", count: 0 };
     }

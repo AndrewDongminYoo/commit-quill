@@ -3,6 +3,7 @@ import { z } from "zod";
 import { groupsPrompt, messagePrompt } from "./prompts";
 import {
   LanguageModelError,
+  MAX_OUTPUT_TOKENS,
   postForJson,
   requireMessage,
   type CommitContext,
@@ -52,6 +53,7 @@ export class GeminiLanguageModel implements CommitLanguageModel {
       },
       body: JSON.stringify({
         contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: MAX_OUTPUT_TOKENS },
       }),
     });
     const parsed = responseSchema.safeParse(body);

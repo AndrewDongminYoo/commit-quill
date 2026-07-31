@@ -3,6 +3,7 @@ import { z } from "zod";
 import { groupsPrompt, messagePrompt } from "./prompts";
 import {
   LanguageModelError,
+  MAX_OUTPUT_TOKENS,
   postForJson,
   requireMessage,
   type CommitContext,
@@ -51,7 +52,11 @@ export class OpenAiLanguageModel implements CommitLanguageModel {
         Authorization: `Bearer ${this.settings.apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ model: this.settings.model, input }),
+      body: JSON.stringify({
+        model: this.settings.model,
+        input,
+        max_output_tokens: MAX_OUTPUT_TOKENS,
+      }),
     });
     const parsed = responseSchema.safeParse(body);
     if (!parsed.success) {

@@ -241,3 +241,28 @@ test("reduces a multi-line split-group subject to its first line", async () => {
     { subject: "feat: add extension", paths: ["src/extension.ts"] },
   ]);
 });
+
+test("puts custom instructions after the detected convention and caps output", async () => {
+  const client = new RecordingHttpClient({
+    status: 200,
+    body: JSON.stringify({ content: [{ type: "text", text: "feat: x" }] }),
+  });
+  const model = createLanguageModel(
+    { provider: "anthropic", model: "m", apiKey: "k" },
+    client,
+  );
+
+  await model.generateMessage({
+    ...context,
+    convention: { kind: "existing", examples: ["feat: a", "feat: b"] },
+    customInstructions: "Always append the issue key.",
+  });
+
+  assert.ok(client.request);
+  const prompt: string = JSON.parse(client.request.body).messages[0].content;
+  assert.ok(
+    prompt.indexOf("feat: a") < prompt.indexOf("Always append the issue key."),
+    "custom instructions must come after the detected convention",
+  );
+  assert.match(client.request.body, /"max_tokens":4096/);
+});

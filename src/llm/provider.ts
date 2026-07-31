@@ -27,7 +27,16 @@ export type CommitContext = {
   readonly diff: string;
   readonly files: readonly string[];
   readonly convention: CommitConvention;
+  readonly customInstructions?: string;
 };
+
+/**
+ * A shared ceiling on generated tokens. Anthropic already had one; OpenAI and
+ * Gemini had none, so a reasoning model could spend far past what a commit
+ * message needs. Generous enough for a subject plus a body, including the
+ * reasoning tokens that count against this budget on some models.
+ */
+export const MAX_OUTPUT_TOKENS = 4096;
 
 export type CommitGroup = {
   readonly subject: string;

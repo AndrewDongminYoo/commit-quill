@@ -33,7 +33,7 @@ Diffs are truncated at `autoCommitMsg.maxDiffCharacters` (64000 by default), and
 
 Each provider call shows a cancellable progress notification. Cancelling aborts the in-flight request and ends the command without creating a commit.
 
-It follows a detected stable local commit convention.
+It follows a detected stable local commit convention. Anything you put in `autoCommitMsg.customInstructions` is appended after that and takes precedence over it, which is where a house convention or a required issue trailer belongs.
 
 When no stable convention exists, it asks for a Conventional Commit subject.
 

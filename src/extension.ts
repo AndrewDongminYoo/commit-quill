@@ -108,8 +108,13 @@ async function generateCommit(
     const outcome = await new CommitWorkflow(
       model,
       new VsCodeCommitUserInterface(repository),
-      readSnapshotLimits(),
-      stagedOutput,
+      {
+        limits: readSnapshotLimits(),
+        stagedOutput,
+        customInstructions: vscode.workspace
+          .getConfiguration("autoCommitMsg")
+          .get<string>("customInstructions", ""),
+      },
     ).run(workspacePath);
     await reportOutcome(outcome);
   } catch (error: unknown) {
