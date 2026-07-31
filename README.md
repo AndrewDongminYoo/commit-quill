@@ -1,5 +1,7 @@
 # Commit Quill
 
+![Commit Quill](media/banner.png)
+
 Generate reviewed Git commit messages in VS Code with your own OpenAI, Anthropic, or Gemini API key.
 
 The extension never commits without showing an editable commit subject and receiving your confirmation.
