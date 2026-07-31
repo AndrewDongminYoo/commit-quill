@@ -159,3 +159,50 @@ test("drafts the staged subject without committing when asked to", async () => {
   );
   assert.match(await fixture.output(["status", "--short"]), /^M {2}README.md/);
 });
+
+test("reports how many commits exist when the user cancels mid-split", async () => {
+  const fixture = await createFixture();
+  await fixture.write("feature.ts", "export const feature = true;\n");
+  await fixture.write("docs.md", "# Documentation\n");
+  const model = new FakeLanguageModel("unused", [
+    { subject: "feat: add feature", paths: ["feature.ts"] },
+    { subject: "docs: add documentation", paths: ["docs.md"] },
+  ]);
+
+  const outcome = await new CommitWorkflow(
+    model,
+    new FakeUserInterface(true, ["feat: add feature", undefined]),
+  ).run(fixture.repositoryPath);
+
+  assert.deepStrictEqual(outcome, { kind: "cancelled", count: 1 });
+  assert.match(
+    await fixture.output(["log", "-1", "--format=%s"]),
+    /add feature/,
+  );
+});
+
+test("names the commits already created when a split fails partway", async () => {
+  const fixture = await createFixture();
+  await fixture.write("feature.ts", "export const feature = true;\n");
+  await fixture.write("docs.md", "# Documentation\n");
+  const model = new FakeLanguageModel("unused", [
+    { subject: "feat: add feature", paths: ["feature.ts"] },
+    { subject: "docs: add documentation", paths: ["docs.md"] },
+  ]);
+
+  // A blank confirmed subject makes the second `git commit` fail.
+  await assert.rejects(
+    new CommitWorkflow(
+      model,
+      new FakeUserInterface(true, ["feat: add feature", "   "]),
+    ).run(fixture.repositoryPath),
+    (error: Error) =>
+      error.name === "PartialCommitError" &&
+      /Created 1 commit\(s\), then stopped/.test(error.message),
+  );
+
+  assert.match(
+    await fixture.output(["log", "-1", "--format=%s"]),
+    /add feature/,
+  );
+});

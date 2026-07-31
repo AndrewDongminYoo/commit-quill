@@ -18,7 +18,11 @@ import {
 import { resolveRepository } from "./vscode-git";
 import { ProgressReportingLanguageModel } from "./vscode-language-model";
 import { VsCodeCommitUserInterface } from "./vscode-user-interface";
-import { CommitWorkflow, type StagedOutput } from "./workflow/commit-workflow";
+import {
+  CommitWorkflow,
+  type StagedOutput,
+  type WorkflowOutcome,
+} from "./workflow/commit-workflow";
 
 const secretKeyPrefix = "auto-commit-msg.api-key";
 
@@ -101,12 +105,13 @@ async function generateCommit(
       controller,
     );
 
-    await new CommitWorkflow(
+    const outcome = await new CommitWorkflow(
       model,
       new VsCodeCommitUserInterface(repository),
       readSnapshotLimits(),
       stagedOutput,
     ).run(workspacePath);
+    await reportOutcome(outcome);
   } catch (error: unknown) {
     // Cancelling is a choice the user already made; do not report it back.
     if (error instanceof LanguageModelCancelledError) {
@@ -236,6 +241,34 @@ async function readProviderSettings(
       return step.settings;
     default:
       return assertNever(step);
+  }
+}
+
+/**
+ * Commits are the one thing this command does that the user cannot undo with
+ * Escape, so say when they happened — including the ones already made before a
+ * cancellation. Drafting needs no message: the filled input box is the receipt,
+ * and a clean tree was already reported by the workflow.
+ */
+async function reportOutcome(outcome: WorkflowOutcome): Promise<void> {
+  switch (outcome.kind) {
+    case "committed":
+      await vscode.window.showInformationMessage(
+        `Created ${String(outcome.count)} commit(s).`,
+      );
+      return;
+    case "cancelled":
+      if (outcome.count > 0) {
+        await vscode.window.showInformationMessage(
+          `Created ${String(outcome.count)} commit(s) before cancelling; the remaining groups were left staged or unstaged as they were.`,
+        );
+      }
+      return;
+    case "drafted":
+    case "nothing-to-commit":
+      return;
+    default:
+      return assertNever(outcome);
   }
 }
 

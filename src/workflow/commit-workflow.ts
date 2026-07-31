@@ -15,9 +15,29 @@ import {
 
 export type WorkflowOutcome =
   | { readonly kind: "nothing-to-commit" }
-  | { readonly kind: "cancelled" }
+  /** `count` is how many commits were already created before cancelling. */
+  | { readonly kind: "cancelled"; readonly count: number }
   | { readonly kind: "drafted" }
   | { readonly kind: "committed"; readonly count: number };
+
+/**
+ * A split run that failed partway leaves real commits behind. Carrying the
+ * count means the user is told what exists rather than being handed a bare Git
+ * error over a repository that quietly moved.
+ */
+export class PartialCommitError extends Error {
+  readonly count: number;
+
+  constructor(count: number, cause: unknown) {
+    const reason = cause instanceof Error ? cause.message : String(cause);
+    super(
+      `Created ${String(count)} commit(s), then stopped: ${reason} The remaining groups were not committed.`,
+      { cause },
+    );
+    this.name = "PartialCommitError";
+    this.count = count;
+  }
+}
 
 /**
  * What to do with the subject generated for an already-staged tree.
@@ -105,7 +125,7 @@ export class CommitWorkflow {
       firstLine(message),
     );
     if (confirmedSubject === undefined) {
-      return { kind: "cancelled" };
+      return { kind: "cancelled", count: 0 };
     }
 
     await commit(await getRepositoryRoot(cwd), confirmedSubject);
@@ -122,7 +142,7 @@ export class CommitWorkflow {
       convention: detectConvention(snapshot.subjects),
     });
     if (!(await this.userInterface.confirmSplit(groups))) {
-      return { kind: "cancelled" };
+      return { kind: "cancelled", count: 0 };
     }
 
     const repositoryPath = await getRepositoryRoot(cwd);
@@ -132,11 +152,16 @@ export class CommitWorkflow {
         group.subject,
       );
       if (confirmedSubject === undefined) {
-        return { kind: "cancelled" };
+        return { kind: "cancelled", count: committedCount };
       }
 
-      await stagePaths(repositoryPath, group.paths);
-      await commit(repositoryPath, confirmedSubject);
+      try {
+        await stagePaths(repositoryPath, group.paths);
+        await commit(repositoryPath, confirmedSubject);
+      } catch (error: unknown) {
+        throw new PartialCommitError(committedCount, error);
+      }
+
       committedCount += 1;
     }
 
