@@ -24,7 +24,7 @@ import {
   type WorkflowOutcome,
 } from "./workflow/commit-workflow";
 
-const secretKeyPrefix = "auto-commit-msg.api-key";
+const secretKeyPrefix = "commit-quill.api-key";
 
 export type ExtensionRuntimeContext = {
   readonly secrets: vscode.SecretStorage;
@@ -52,17 +52,17 @@ class ExtensionInvariantError extends Error {
 export function activate(context: ExtensionRuntimeContext): void {
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      "auto-commit-msg.generateCommit",
+      "commitQuill.generate",
       // The scm/title menu passes the Source Control the user clicked.
       (scmArgument: unknown) => generateCommit(context, scmArgument),
     ),
-    vscode.commands.registerCommand("auto-commit-msg.configureProvider", () =>
+    vscode.commands.registerCommand("commitQuill.configureProvider", () =>
       configureProvider(context),
     ),
-    vscode.commands.registerCommand("auto-commit-msg.setApiKey", () =>
+    vscode.commands.registerCommand("commitQuill.setApiKey", () =>
       setApiKey(context),
     ),
-    vscode.commands.registerCommand("auto-commit-msg.removeApiKey", () =>
+    vscode.commands.registerCommand("commitQuill.removeApiKey", () =>
       removeApiKey(context),
     ),
   );
@@ -112,7 +112,7 @@ async function generateCommit(
         limits: readSnapshotLimits(),
         stagedOutput,
         customInstructions: vscode.workspace
-          .getConfiguration("autoCommitMsg")
+          .getConfiguration("commitQuill")
           .get<string>("customInstructions", ""),
       },
     ).run(workspacePath);
@@ -139,7 +139,7 @@ async function configureProvider(
     return undefined;
   }
 
-  const configuration = vscode.workspace.getConfiguration("autoCommitMsg");
+  const configuration = vscode.workspace.getConfiguration("commitQuill");
   await configuration.update(
     "provider",
     provider,
@@ -221,7 +221,7 @@ async function removeApiKey(context: ExtensionRuntimeContext): Promise<void> {
 async function readProviderSettings(
   context: ExtensionRuntimeContext,
 ): Promise<ProviderSettings | undefined> {
-  const configuration = vscode.workspace.getConfiguration("autoCommitMsg");
+  const configuration = vscode.workspace.getConfiguration("commitQuill");
   const provider = parseProvider(configuration.get<unknown>("provider"));
   const step = nextProviderSetupStep({
     provider,
@@ -279,7 +279,7 @@ async function reportOutcome(outcome: WorkflowOutcome): Promise<void> {
 
 function readCommitDirectly(): boolean {
   return vscode.workspace
-    .getConfiguration("autoCommitMsg")
+    .getConfiguration("commitQuill")
     .get<boolean>("commitDirectly", false);
 }
 
@@ -287,7 +287,7 @@ function readSnapshotLimits(): SnapshotLimits {
   return {
     ...defaultSnapshotLimits,
     maxDiffCharacters: vscode.workspace
-      .getConfiguration("autoCommitMsg")
+      .getConfiguration("commitQuill")
       .get<number>(
         "maxDiffCharacters",
         defaultSnapshotLimits.maxDiffCharacters,
@@ -352,7 +352,7 @@ async function storeModelSelection(
   }
 
   await vscode.workspace
-    .getConfiguration("autoCommitMsg")
+    .getConfiguration("commitQuill")
     .update(
       modelSettingKey(provider),
       model,

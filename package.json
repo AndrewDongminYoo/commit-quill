@@ -1,16 +1,16 @@
 {
-  "name": "auto-commit-msg",
-  "displayName": "Auto Commit Message",
+  "name": "commit-quill",
+  "displayName": "Commit Quill",
   "description": "One feature: It writes commit messages for you.",
   "version": "0.0.1",
   "publisher": "AndrewDongminYoo",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/AndrewDongminYoo/auto-commit-msg.git"
+    "url": "https://github.com/AndrewDongminYoo/commit-quill.git"
   },
   "bugs": {
-    "url": "https://github.com/AndrewDongminYoo/auto-commit-msg/issues"
+    "url": "https://github.com/AndrewDongminYoo/commit-quill/issues"
   },
   "keywords": [
     "git",
@@ -31,36 +31,36 @@
   "contributes": {
     "commands": [
       {
-        "command": "auto-commit-msg.generateCommit",
-        "title": "Auto Commit Message: Generate Commit",
+        "command": "commitQuill.generate",
+        "title": "Commit Quill: Generate Commit",
         "icon": "$(sparkle)"
       },
       {
-        "command": "auto-commit-msg.configureProvider",
-        "title": "Auto Commit Message: Configure Provider"
+        "command": "commitQuill.configureProvider",
+        "title": "Commit Quill: Configure Provider"
       },
       {
-        "command": "auto-commit-msg.setApiKey",
-        "title": "Auto Commit Message: Set API Key"
+        "command": "commitQuill.setApiKey",
+        "title": "Commit Quill: Set API Key"
       },
       {
-        "command": "auto-commit-msg.removeApiKey",
-        "title": "Auto Commit Message: Remove API Key"
+        "command": "commitQuill.removeApiKey",
+        "title": "Commit Quill: Remove API Key"
       }
     ],
     "menus": {
       "scm/title": [
         {
-          "command": "auto-commit-msg.generateCommit",
+          "command": "commitQuill.generate",
           "when": "scmProvider == git",
           "group": "navigation"
         }
       ]
     },
     "configuration": {
-      "title": "Auto Commit Message",
+      "title": "Commit Quill",
       "properties": {
-        "autoCommitMsg.provider": {
+        "commitQuill.provider": {
           "type": "string",
           "enum": [
             "",
@@ -78,38 +78,38 @@
           "scope": "application",
           "description": "The provider used to generate commit messages."
         },
-        "autoCommitMsg.openaiModel": {
+        "commitQuill.openaiModel": {
           "type": "string",
           "default": "",
           "scope": "application",
           "description": "The OpenAI model name."
         },
-        "autoCommitMsg.anthropicModel": {
+        "commitQuill.anthropicModel": {
           "type": "string",
           "default": "",
           "scope": "application",
           "description": "The Anthropic model name."
         },
-        "autoCommitMsg.geminiModel": {
+        "commitQuill.geminiModel": {
           "type": "string",
           "default": "",
           "scope": "application",
           "description": "The Gemini model name."
         },
-        "autoCommitMsg.customInstructions": {
+        "commitQuill.customInstructions": {
           "type": "string",
           "default": "",
           "scope": "application",
           "editPresentation": "multilineText",
           "description": "Extra instructions appended to every prompt, such as a house convention or a required issue trailer. These take precedence over the convention detected from recent commits."
         },
-        "autoCommitMsg.commitDirectly": {
+        "commitQuill.commitDirectly": {
           "type": "boolean",
           "default": false,
           "scope": "application",
           "description": "Commit staged changes immediately after you confirm the generated subject, instead of writing it into the Source Control input box for review. Splitting an unstaged tree always commits directly."
         },
-        "autoCommitMsg.maxDiffCharacters": {
+        "commitQuill.maxDiffCharacters": {
           "type": "integer",
           "minimum": 1000,
           "default": 64000,

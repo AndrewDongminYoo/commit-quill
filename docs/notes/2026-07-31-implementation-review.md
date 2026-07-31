@@ -31,13 +31,13 @@ Three consequences:
 - Anything the user had already typed into the SCM box is ignored, where GitLens treats it as a prompt hint.
 
 The hybrid honors both: **staged → write into the input box and stop** (multi-line becomes possible, the user commits with the button they already use); **unstaged split → keep committing directly**, since a stage-commit loop has nowhere else to put each message.
-An `autoCommitMsg.commitDirectly` setting preserves today's behavior for anyone who prefers it.
+An `commitQuill.commitDirectly` setting preserves today's behavior for anyone who prefers it.
 
 ### 2. The spec's Git-extension clause was never the blocker — it was misread
 
 > **Correction (2026-07-31, after this note was first written).** The paragraph below argued the spec clause had to be narrowed to "_undocumented_ internals". It already said exactly that. The clause was correctly scoped from the start and never forbade the public API; what blocked tiers 1.1 and 1.3 was an over-broad reading of it, not its wording. The spec has since been extended with a positive statement of what the public API is used for. The technical content below stands; the framing was wrong.
 
-`docs/specs/2026-07-31-auto-commit-msg-design.md` states: _"It does not use undocumented internals of VS Code's built-in Git extension."_
+`docs/specs/2026-07-31-commit-quill-design.md` states: _"It does not use undocumented internals of VS Code's built-in Git extension."_
 
 `Repository.inputBox.value`, enumerating repositories in a multi-root or submodule workspace, and receiving the repository the `scm/title` menu passes as a command argument all come from the same place — and it is not an undocumented internal.
 Verified in the bundled Git extension shipped with VS Code 1.131.0 (`resources/app/extensions/git/dist/main.js`): the exported object implements `getAPI(e){ ... if(e!==1) throw new Error("No API version ${e} found."); ... }`.
@@ -78,7 +78,7 @@ A new PNG, a `.zip`, or a 20 MB fixture becomes mojibake in the prompt — bille
 
 Neither path truncates.
 A large staged diff is sent whole, on the user's own key, with no warning.
-GitLens exposes this as a configurable character budget; a `autoCommitMsg.maxDiffCharacters` setting with a sane default (and a notice when it truncates) is the smallest useful version.
+GitLens exposes this as a configurable character budget; a `commitQuill.maxDiffCharacters` setting with a sane default (and a notice when it truncates) is the smallest useful version.
 
 ### 7. `requireSubject` throws on any multi-line response
 
@@ -133,7 +133,7 @@ For a reasoning model on the OpenAI Responses path, an uncapped request can spen
 
 ### 14. The manifest cannot be published as-is
 
-`package.json` has no `publisher`, `license`, `repository`, `icon`, or `keywords`; there is no `LICENSE` file; `displayName` is the raw slug `auto-commit-msg`; and `categories` is `["Other"]` rather than `SCM Providers` / `AI`.
+`package.json` has no `publisher`, `license`, `repository`, `icon`, or `keywords`; there is no `LICENSE` file; `displayName` is the raw slug `commit-quill`; and `categories` is `["Other"]` rather than `SCM Providers` / `AI`.
 `vsce package` will refuse or emit warnings, and the result would be unlistable in the Marketplace.
 For a product whose entire premise is "the free alternative to a paid feature", shipping is part of the feature — this belongs in the next commit, not in a polish pass.
 

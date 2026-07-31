@@ -1,4 +1,4 @@
-# Auto Commit Message
+# Commit Quill
 
 Generate reviewed Git commit messages in VS Code with your own OpenAI, Anthropic, or Gemini API key.
 
@@ -12,7 +12,7 @@ The extension never commits without showing an editable commit subject and recei
 
 ## Setup
 
-1. Run **Auto Commit Message: Generate Commit** from the Command Palette or the sparkle icon in the Source Control title bar.
+1. Run **Commit Quill: Generate Commit** from the Command Palette or the sparkle icon in the Source Control title bar.
 2. If required, select a provider, select one of its listed models (or enter a custom model ID), and enter its API key.
 
 Selecting a provider always shows its model list.
@@ -27,13 +27,13 @@ Keys are stored separately per provider in VS Code Secret Storage and are never 
 
 When staged changes exist, the extension sends only the staged diff, staged file list, and recent commit subjects to the selected provider.
 
-The generated subject is written into the Source Control input box, where you review it beside your diff and commit with the button you already use. Text already in the box is kept and the subject is appended after it. Set `autoCommitMsg.commitDirectly` to confirm and commit in one step instead.
+The generated subject is written into the Source Control input box, where you review it beside your diff and commit with the button you already use. Text already in the box is kept and the subject is appended after it. Set `commitQuill.commitDirectly` to confirm and commit in one step instead.
 
-Diffs are truncated at `autoCommitMsg.maxDiffCharacters` (64000 by default), and untracked files that are binary or larger than 128 KB are named rather than sent. You are told whenever either happens.
+Diffs are truncated at `commitQuill.maxDiffCharacters` (64000 by default), and untracked files that are binary or larger than 128 KB are named rather than sent. You are told whenever either happens.
 
 Each provider call shows a cancellable progress notification. Cancelling aborts the in-flight request and ends the command without creating a commit.
 
-It follows a detected stable local commit convention. Anything you put in `autoCommitMsg.customInstructions` is appended after that and takes precedence over it, which is where a house convention or a required issue trailer belongs.
+It follows a detected stable local commit convention. Anything you put in `commitQuill.customInstructions` is appended after that and takes precedence over it, which is where a house convention or a required issue trailer belongs.
 
 When no stable convention exists, it asks for a Conventional Commit subject.
 

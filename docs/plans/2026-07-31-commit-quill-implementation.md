@@ -1,4 +1,4 @@
-# Auto Commit Message Implementation Plan
+# Commit Quill Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -212,7 +212,7 @@ test("registers the generate commit command", async () => {
   assert.strictEqual(
     await vscode.commands
       .getCommands(true)
-      .then((commands) => commands.includes("auto-commit-msg.generateCommit")),
+      .then((commands) => commands.includes("commitQuill.generate")),
     true,
   );
 });
@@ -222,15 +222,15 @@ test("registers the generate commit command", async () => {
 
 ```json
 {
-  "command": "auto-commit-msg.generateCommit",
-  "title": "Auto Commit Message: Generate Commit"
+  "command": "commitQuill.generate",
+  "title": "Commit Quill: Generate Commit"
 }
 ```
 
 - [ ] **Step 3: Wire `ExtensionContext.secrets` to password-input set/remove-key commands and global model/provider settings.**
 
 ```typescript
-await context.secrets.store(`auto-commit-msg.${provider}.apiKey`, key);
+await context.secrets.store(`commit-quill.${provider}.apiKey`, key);
 ```
 
 - [ ] **Step 4: Wire the Generate Commit command to the workspace Git root and the Task 3 UI adapter.**

@@ -37,10 +37,10 @@ suite("Extension commands", () => {
     activate(context);
     const commands = await vscode.commands.getCommands(true);
 
-    assert.ok(commands.includes("auto-commit-msg.generateCommit"));
-    assert.ok(commands.includes("auto-commit-msg.configureProvider"));
-    assert.ok(commands.includes("auto-commit-msg.setApiKey"));
-    assert.ok(commands.includes("auto-commit-msg.removeApiKey"));
+    assert.ok(commands.includes("commitQuill.generate"));
+    assert.ok(commands.includes("commitQuill.configureProvider"));
+    assert.ok(commands.includes("commitQuill.setApiKey"));
+    assert.ok(commands.includes("commitQuill.removeApiKey"));
     context.subscriptions.forEach((subscription) => subscription.dispose());
   });
 

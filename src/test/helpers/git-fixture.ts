@@ -14,13 +14,11 @@ export class GitFixture {
   }
 
   static async create(): Promise<GitFixture> {
-    const repositoryPath = await mkdtemp(
-      join(tmpdir(), "auto-commit-msg-test-"),
-    );
+    const repositoryPath = await mkdtemp(join(tmpdir(), "commit-quill-test-"));
     const fixture = new GitFixture(repositoryPath);
     await fixture.git(["init"]);
     await fixture.git(["config", "user.email", "test@example.com"]);
-    await fixture.git(["config", "user.name", "Auto Commit Message Test"]);
+    await fixture.git(["config", "user.name", "Commit Quill Test"]);
     await fixture.write("README.md", "before\n");
     await fixture.git(["add", "README.md"]);
     await fixture.git(["commit", "-m", "chore: initialize fixture"]);

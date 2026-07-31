@@ -1,6 +1,6 @@
 # Change Log
 
-All notable changes to the "auto-commit-msg" extension will be documented in this file.
+All notable changes to the "commit-quill" extension will be documented in this file.
 
 ## [Unreleased]
 
