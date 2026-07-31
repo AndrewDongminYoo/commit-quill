@@ -14,10 +14,65 @@
   "contributes": {
     "commands": [
       {
-        "command": "auto-commit-msg.helloWorld",
-        "title": "Hello World"
+        "command": "auto-commit-msg.generateCommit",
+        "title": "Auto Commit Message: Generate Commit"
+      },
+      {
+        "command": "auto-commit-msg.configureProvider",
+        "title": "Auto Commit Message: Configure Provider"
+      },
+      {
+        "command": "auto-commit-msg.setApiKey",
+        "title": "Auto Commit Message: Set API Key"
+      },
+      {
+        "command": "auto-commit-msg.removeApiKey",
+        "title": "Auto Commit Message: Remove API Key"
       }
-    ]
+    ],
+    "menus": {
+      "scm/title": [
+        {
+          "command": "auto-commit-msg.generateCommit",
+          "when": "scmProvider == git",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Auto Commit Message",
+      "properties": {
+        "autoCommitMsg.provider": {
+          "type": "string",
+          "enum": [
+            "openai",
+            "anthropic",
+            "gemini"
+          ],
+          "default": "openai",
+          "scope": "application",
+          "description": "The provider used to generate commit messages."
+        },
+        "autoCommitMsg.openaiModel": {
+          "type": "string",
+          "default": "",
+          "scope": "application",
+          "description": "The OpenAI model name."
+        },
+        "autoCommitMsg.anthropicModel": {
+          "type": "string",
+          "default": "",
+          "scope": "application",
+          "description": "The Anthropic model name."
+        },
+        "autoCommitMsg.geminiModel": {
+          "type": "string",
+          "default": "",
+          "scope": "application",
+          "description": "The Gemini model name."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "pnpm run package",
@@ -33,10 +88,14 @@
     "lint": "eslint src",
     "test": "vscode-test"
   },
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
   "devDependencies": {
     "@types/vscode": "^1.125.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "24.x",
+    "mocha": "^11.7.6",
     "typescript-eslint": "^8.61.1",
     "eslint": "^10.5.0",
     "esbuild": "^0.28.1",
