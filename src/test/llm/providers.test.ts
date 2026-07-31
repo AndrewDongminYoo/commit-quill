@@ -266,3 +266,116 @@ test("puts custom instructions after the detected convention and caps output", a
   );
   assert.match(client.request.body, /"max_tokens":4096/);
 });
+
+const malformed: readonly {
+  readonly name: string;
+  readonly provider: "openai" | "anthropic" | "gemini";
+  readonly body: string;
+}[] = [
+  { name: "OpenAI missing output", provider: "openai", body: "{}" },
+  {
+    name: "OpenAI output block without text",
+    provider: "openai",
+    body: JSON.stringify({
+      output: [{ type: "message", content: [{ type: "refusal" }] }],
+    }),
+  },
+  { name: "Anthropic missing content", provider: "anthropic", body: "{}" },
+  {
+    name: "Anthropic non-text block",
+    provider: "anthropic",
+    body: JSON.stringify({ content: [{ type: "thinking" }] }),
+  },
+  { name: "Gemini missing candidates", provider: "gemini", body: "{}" },
+  {
+    name: "Gemini part without text",
+    provider: "gemini",
+    body: JSON.stringify({ candidates: [{ content: { parts: [{}] } }] }),
+  },
+  {
+    name: "wrong types entirely",
+    provider: "anthropic",
+    body: JSON.stringify({ content: "not an array" }),
+  },
+];
+
+for (const shape of malformed) {
+  test(`rejects a malformed response: ${shape.name}`, async () => {
+    const model = createLanguageModel(
+      { provider: shape.provider, model: "m", apiKey: "k" },
+      new RecordingHttpClient({ status: 200, body: shape.body }),
+    );
+
+    await assert.rejects(model.generateMessage(context), /did not contain/);
+  });
+}
+
+const badProposals: readonly {
+  readonly name: string;
+  readonly text: string;
+}[] = [
+  { name: "not JSON", text: "sorry, I cannot" },
+  { name: "missing groups", text: JSON.stringify({}) },
+  { name: "groups not an array", text: JSON.stringify({ groups: 1 }) },
+  { name: "empty groups", text: JSON.stringify({ groups: [] }) },
+  {
+    name: "group without paths",
+    text: JSON.stringify({ groups: [{ subject: "feat: x" }] }),
+  },
+  {
+    name: "group with empty paths",
+    text: JSON.stringify({ groups: [{ subject: "feat: x", paths: [] }] }),
+  },
+  {
+    name: "non-string path",
+    text: JSON.stringify({ groups: [{ subject: "feat: x", paths: [7] }] }),
+  },
+  {
+    name: "blank subject",
+    text: JSON.stringify({
+      groups: [{ subject: "  ", paths: ["src/extension.ts"] }],
+    }),
+  },
+];
+
+for (const proposal of badProposals) {
+  test(`rejects a bad split proposal: ${proposal.name}`, async () => {
+    const model = createLanguageModel(
+      { provider: "anthropic", model: "m", apiKey: "k" },
+      new RecordingHttpClient({
+        status: 200,
+        body: JSON.stringify({
+          content: [{ type: "text", text: proposal.text }],
+        }),
+      }),
+    );
+
+    await assert.rejects(model.proposeGroups(context));
+  });
+}
+
+test("accepts a split proposal wrapped in a fenced code block", async () => {
+  const model = createLanguageModel(
+    { provider: "anthropic", model: "m", apiKey: "k" },
+    new RecordingHttpClient({
+      status: 200,
+      body: JSON.stringify({
+        content: [
+          {
+            type: "text",
+            text:
+              "```json\n" +
+              JSON.stringify({
+                groups: [{ subject: "feat: x", paths: ["src/extension.ts"] }],
+              }) +
+              "\n```",
+          },
+        ],
+      }),
+    }),
+  );
+
+  assert.deepStrictEqual(await model.proposeGroups(context), [
+    { subject: "feat: x", paths: ["src/extension.ts"] },
+  ]);
+});
