@@ -39,11 +39,19 @@ export class VsCodeCommitUserInterface implements CommitUserInterface {
   }
 
   async confirmSplit(groups: readonly CommitGroup[]): Promise<boolean> {
+    // The modal has no formatting, so the only lever is line structure: the
+    // subject alone on its line, its files indented under it, a blank line
+    // between groups. Reads as a list instead of a paragraph.
     const detail = groups
-      .map((group) => `${group.subject} (${group.paths.join(", ")})`)
-      .join("\n");
+      .map(
+        (group, index) =>
+          `${String(index + 1)}. ${group.subject}\n    ${group.paths.join("\n    ")}`,
+      )
+      .join("\n\n");
     const selected = await vscode.window.showWarningMessage(
-      `Create ${groups.length} separate commits?`,
+      groups.length === 1
+        ? "Create this commit?"
+        : `Create ${String(groups.length)} separate commits?`,
       { modal: true, detail },
       CONFIRM_SPLIT,
     );

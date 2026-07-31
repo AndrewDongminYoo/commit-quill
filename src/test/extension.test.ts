@@ -45,11 +45,22 @@ suite("Extension commands", () => {
   });
 
   test("uses an icon for the Source Control generate action", async () => {
-    const manifest = await readFile(
-      join(__dirname, "../../package.json"),
-      "utf8",
+    // Which glyph is a cosmetic choice; that the action renders as an icon
+    // rather than a text button in the Source Control title bar is not.
+    const manifest: unknown = JSON.parse(
+      await readFile(join(__dirname, "../../package.json"), "utf8"),
     );
-    assert.match(manifest, /"icon": "\$\(sparkle\)"/);
+    const commands = (
+      manifest as {
+        contributes: { commands: { command: string; icon?: string }[] };
+      }
+    ).contributes.commands;
+    const generate = commands.find(
+      (command) => command.command === "commitQuill.generate",
+    );
+
+    assert.ok(generate, "the generate command must be contributed");
+    assert.match(generate.icon ?? "", /^\$\([a-z-]+\)$/);
   });
 });
 

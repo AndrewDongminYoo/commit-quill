@@ -33,7 +33,7 @@
       {
         "command": "commitQuill.generate",
         "title": "Commit Quill: Generate Commit",
-        "icon": "$(sparkle)"
+        "icon": "$(wand)"
       },
       {
         "command": "commitQuill.configureProvider",
