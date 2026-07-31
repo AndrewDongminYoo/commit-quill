@@ -24,9 +24,9 @@ export class ProgressReportingLanguageModel implements CommitLanguageModel {
     this.controller = controller;
   }
 
-  async generateSubject(context: CommitContext): Promise<string> {
+  async generateMessage(context: CommitContext): Promise<string> {
     return this.reportProgress("Generating commit message…", () =>
-      this.inner.generateSubject(context),
+      this.inner.generateMessage(context),
     );
   }
 

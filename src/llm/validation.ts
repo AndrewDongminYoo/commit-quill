@@ -1,8 +1,9 @@
 import { z } from "zod";
 
 import {
+  firstLine,
   LanguageModelError,
-  requireSubject,
+  requireMessage,
   type CommitGroup,
 } from "./provider";
 
@@ -32,7 +33,8 @@ export function parseGroups(
   const allowed = new Set(allowedPaths);
   const assigned = new Set<string>();
   const groups = proposal.data.groups.map((group) => ({
-    subject: requireSubject(group.subject),
+    // Each group is committed with `git commit -m`, so only a subject fits.
+    subject: firstLine(requireMessage(group.subject)),
     paths: group.paths.map((path) => validatePath(path, allowed, assigned)),
   }));
   if (assigned.size !== allowed.size) {

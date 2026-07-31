@@ -1,7 +1,7 @@
 import type { CommitContext } from "./provider";
 
-export function subjectPrompt(context: CommitContext): string {
-  return `${conventionInstruction(context)}\nReturn exactly one commit subject with no markdown or explanation.\nChanged files:\n${context.files.join("\n")}\nDiff:\n${context.diff}`;
+export function messagePrompt(context: CommitContext): string {
+  return `${conventionInstruction(context)}\nReturn the commit subject on the first line.\nAdd a blank line and a short body only when the change is not self-explanatory from its subject; omit it otherwise.\nNo markdown, no preamble, no explanation of your reasoning.\nChanged files:\n${context.files.join("\n")}\nDiff:\n${context.diff}`;
 }
 
 export function groupsPrompt(context: CommitContext): string {

@@ -1,10 +1,10 @@
 import { z } from "zod";
 
-import { groupsPrompt, subjectPrompt } from "./prompts";
+import { groupsPrompt, messagePrompt } from "./prompts";
 import {
   LanguageModelError,
   postForJson,
-  requireSubject,
+  requireMessage,
   type CommitContext,
   type CommitGroup,
   type CommitLanguageModel,
@@ -32,8 +32,8 @@ export class GeminiLanguageModel implements CommitLanguageModel {
     this.client = client;
   }
 
-  async generateSubject(context: CommitContext): Promise<string> {
-    return requireSubject(await this.request(subjectPrompt(context)));
+  async generateMessage(context: CommitContext): Promise<string> {
+    return requireMessage(await this.request(messagePrompt(context)));
   }
 
   async proposeGroups(context: CommitContext): Promise<readonly CommitGroup[]> {

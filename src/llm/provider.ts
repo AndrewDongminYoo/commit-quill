@@ -50,7 +50,7 @@ export interface HttpClient {
 }
 
 export interface CommitLanguageModel {
-  generateSubject(context: CommitContext): Promise<string>;
+  generateMessage(context: CommitContext): Promise<string>;
   proposeGroups(context: CommitContext): Promise<readonly CommitGroup[]>;
 }
 
@@ -168,15 +168,25 @@ function readErrorMessage(body: string): string | undefined {
   return parsed.success ? parsed.data.error.message.trim() : undefined;
 }
 
-export function requireSubject(text: string): string {
-  const subject = text.trim();
-  if (subject.length === 0 || subject.includes("\n")) {
+/**
+ * A provider may answer with a subject alone or a subject plus a body. Both are
+ * valid commit messages, so only emptiness is an error — rejecting multi-line
+ * output would fail the workflow exactly when the model did the better job.
+ */
+export function requireMessage(text: string): string {
+  const message = text.trim();
+  if (message.length === 0) {
     throw new LanguageModelError(
-      "The provider did not return a single commit subject.",
+      "The provider did not return a commit message.",
     );
   }
 
-  return subject;
+  return message;
+}
+
+/** The subject line, for the paths that can only carry one line. */
+export function firstLine(message: string): string {
+  return message.split("\n")[0]?.trim() ?? message;
 }
 
 export function assertNever(value: never): never {

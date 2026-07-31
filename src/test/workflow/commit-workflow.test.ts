@@ -20,7 +20,7 @@ class FakeLanguageModel implements CommitLanguageModel {
     this.groups = groups;
   }
 
-  async generateSubject(): Promise<string> {
+  async generateMessage(): Promise<string> {
     this.requestedSubjects += 1;
     return this.subject;
   }
@@ -54,7 +54,7 @@ class FakeUserInterface implements CommitUserInterface {
     return this.acceptsSplit;
   }
 
-  async draftSubject(subject: string): Promise<void> {
+  async draftMessage(subject: string): Promise<void> {
     this.drafted = subject;
   }
 

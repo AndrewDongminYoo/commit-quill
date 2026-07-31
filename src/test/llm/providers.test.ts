@@ -47,7 +47,7 @@ test("sends an OpenAI Responses request and extracts its output text", async () 
     client,
   );
 
-  const subject = await model.generateSubject(context);
+  const subject = await model.generateMessage(context);
 
   assert.strictEqual(subject, "feat: add commit command");
   assert.ok(client.request);
@@ -68,7 +68,7 @@ test("sends an Anthropic Messages request and extracts its text block", async ()
     client,
   );
 
-  const subject = await model.generateSubject(context);
+  const subject = await model.generateMessage(context);
 
   assert.strictEqual(subject, "fix: preserve staged changes");
   assert.ok(client.request);
@@ -95,7 +95,7 @@ test("sends a Gemini generateContent request and extracts candidate text", async
     client,
   );
 
-  const subject = await model.generateSubject(context);
+  const subject = await model.generateMessage(context);
 
   assert.strictEqual(subject, "chore: update extension config");
   assert.ok(client.request);
@@ -158,7 +158,7 @@ test("reports the provider's failure reason alongside the status code", async ()
   );
 
   await assert.rejects(
-    model.generateSubject(context),
+    model.generateMessage(context),
     /HTTP 404\. model: claude-3-5-haiku-20241022/,
   );
 });
@@ -174,7 +174,7 @@ test("falls back to the raw body when it is not a provider error envelope", asyn
   );
 
   await assert.rejects(
-    model.generateSubject(context),
+    model.generateMessage(context),
     /HTTP 502\. upstream request timeout/,
   );
 });
@@ -192,4 +192,52 @@ test("reports a cancelled request rather than a transport failure", async () => 
     }),
     (error: Error) => error.name === "LanguageModelCancelledError",
   );
+});
+
+test("keeps a body on the message but reduces split subjects to one line", async () => {
+  const withBody = "feat: add commit command\n\nExplains the why.";
+  const client = new RecordingHttpClient({
+    status: 200,
+    body: JSON.stringify({
+      content: [{ type: "text", text: withBody }],
+    }),
+  });
+  const model = createLanguageModel(
+    { provider: "anthropic", model: "m", apiKey: "k" },
+    client,
+  );
+
+  assert.strictEqual(await model.generateMessage(context), withBody);
+});
+
+test("reduces a multi-line split-group subject to its first line", async () => {
+  const client = new RecordingHttpClient({
+    status: 200,
+    body: JSON.stringify({
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            groups: [
+              {
+                subject:
+                  "feat: add extension\n\nA body the -m flag cannot hold.",
+                paths: ["src/extension.ts"],
+              },
+            ],
+          }),
+        },
+      ],
+    }),
+  });
+  const model = createLanguageModel(
+    { provider: "anthropic", model: "m", apiKey: "k" },
+    client,
+  );
+
+  const groups = await model.proposeGroups(context);
+
+  assert.deepStrictEqual(groups, [
+    { subject: "feat: add extension", paths: ["src/extension.ts"] },
+  ]);
 });

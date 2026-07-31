@@ -7,7 +7,11 @@ import {
 } from "../core/git";
 import { detectConvention } from "../core/convention";
 import type { RepositorySnapshot, SnapshotLimits } from "../core/types";
-import type { CommitGroup, CommitLanguageModel } from "../llm/provider";
+import {
+  firstLine,
+  type CommitGroup,
+  type CommitLanguageModel,
+} from "../llm/provider";
 
 export type WorkflowOutcome =
   | { readonly kind: "nothing-to-commit" }
@@ -30,7 +34,7 @@ export interface CommitUserInterface {
   showInformation(message: string): Promise<void>;
   confirmSplit(groups: readonly CommitGroup[]): Promise<boolean>;
   editSubject(subject: string): Promise<string | undefined>;
-  draftSubject(subject: string): Promise<void>;
+  draftMessage(message: string): Promise<void>;
 }
 
 class WorkflowInvariantError extends Error {
@@ -85,17 +89,21 @@ export class CommitWorkflow {
     cwd: string,
     snapshot: Extract<RepositorySnapshot, { readonly kind: "staged" }>,
   ): Promise<WorkflowOutcome> {
-    const subject = await this.model.generateSubject({
+    const message = await this.model.generateMessage({
       diff: snapshot.diff,
       files: snapshot.files,
       convention: detectConvention(snapshot.subjects),
     });
+    // The input box holds a whole commit message, so any body survives here.
     if (this.stagedOutput === "draft") {
-      await this.userInterface.draftSubject(subject);
+      await this.userInterface.draftMessage(message);
       return { kind: "drafted" };
     }
 
-    const confirmedSubject = await this.userInterface.editSubject(subject);
+    // `git commit -m` plus a single-line confirmation box cannot carry a body.
+    const confirmedSubject = await this.userInterface.editSubject(
+      firstLine(message),
+    );
     if (confirmedSubject === undefined) {
       return { kind: "cancelled" };
     }

@@ -18,14 +18,14 @@ export class VsCodeCommitUserInterface implements CommitUserInterface {
   }
 
   /**
-   * Hand the subject to the Source Control input box so the user reviews it
+   * Hand the message to the Source Control input box so the user reviews it
    * beside the diff and commits with the button they already use.
    *
    * Existing text is appended to rather than replaced — whatever the user had
    * typed is theirs, and losing it silently is worse than an odd two-line
    * draft they can edit.
    */
-  async draftSubject(subject: string): Promise<void> {
+  async draftMessage(message: string): Promise<void> {
     if (this.repository === undefined) {
       throw new Error(
         "The built-in Git extension is unavailable, so the commit message cannot be drafted.",
@@ -34,7 +34,7 @@ export class VsCodeCommitUserInterface implements CommitUserInterface {
 
     const existing = this.repository.inputBox.value.trim();
     this.repository.inputBox.value =
-      existing.length > 0 ? `${existing}\n${subject}` : subject;
+      existing.length > 0 ? `${existing}\n${message}` : message;
     await vscode.commands.executeCommand("workbench.view.scm");
   }
 
