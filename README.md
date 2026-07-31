@@ -41,7 +41,15 @@ The generated subject is always editable before Git commits it.
 
 When no files are staged but the working tree has changes, the extension asks the provider to propose independent file groups.
 
-Grouping files by why they changed is a harder task than summarising one staged diff, and a small model does it unevenly — it groups sensibly but mislabels the commit types. Point `commitQuill.splitModel` at a stronger model on the same provider to run only the split there, without paying for it on every ordinary commit.
+Grouping files by why they changed is a harder task than summarising one staged diff, and it does not degrade gracefully — it comes apart in distinct pieces as the model gets smaller. Measured across two repositories:
+
+| Model     | Groups files sensibly | Type covers the whole group | Orders cause before effect | Subject names everything in the group |
+| --------- | --------------------- | --------------------------- | -------------------------- | ------------------------------------- |
+| Haiku 4.5 | yes                   | no                          | no                         | no                                    |
+| Sonnet 5  | yes                   | yes                         | no                         | no                                    |
+| Opus 5    | yes                   | yes                         | yes                        | yes                                   |
+
+Every model grouped the files correctly; what varied was the labelling. Point `commitQuill.splitModel` at a stronger model on the same provider to run only the split there, without paying for it on every ordinary commit.
 
 Set `commitQuill.splitUnstagedChanges` to `false` to skip splitting entirely: you get one message describing the whole working tree, written to the Source Control input box with nothing staged and nothing committed.
 
