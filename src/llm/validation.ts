@@ -1,5 +1,4 @@
-import { z } from "zod";
-
+import { arrayAt, stringAt } from "./json";
 import {
   firstLine,
   LanguageModelError,
@@ -7,36 +6,40 @@ import {
   type CommitGroup,
 } from "./provider";
 
-const proposalSchema = z.object({
-  groups: z
-    .array(
-      z.object({
-        subject: z.string(),
-        paths: z.array(z.string().min(1)).min(1),
-      }),
-    )
-    .min(1),
-});
+function invalidProposal(): never {
+  throw new LanguageModelError(
+    "The provider did not return a valid split-commit proposal.",
+  );
+}
 
 export function parseGroups(
   text: string,
   allowedPaths: readonly string[],
 ): readonly CommitGroup[] {
-  const parsedJson = parseJson(text);
-  const proposal = proposalSchema.safeParse(parsedJson);
-  if (!proposal.success) {
-    throw new LanguageModelError(
-      "The provider did not return a valid split-commit proposal.",
-    );
+  const proposed = arrayAt(parseJson(text), "groups");
+  if (proposed.length === 0) {
+    invalidProposal();
   }
 
   const allowed = new Set(allowedPaths);
   const assigned = new Set<string>();
-  const groups = proposal.data.groups.map((group) => ({
-    // Each group is committed with `git commit -m`, so only a subject fits.
-    subject: firstLine(requireMessage(group.subject)),
-    paths: group.paths.map((path) => validatePath(path, allowed, assigned)),
-  }));
+  const groups = proposed.map((group) => {
+    const subject = stringAt(group, "subject");
+    const paths = arrayAt(group, "paths");
+    if (subject === undefined || paths.length === 0) {
+      invalidProposal();
+    }
+
+    return {
+      // Each group is committed with `git commit -m`, so only a subject fits.
+      subject: firstLine(requireMessage(subject)),
+      paths: paths.map((path) =>
+        typeof path === "string" && path.length > 0
+          ? validatePath(path, allowed, assigned)
+          : invalidProposal(),
+      ),
+    };
+  });
   if (assigned.size !== allowed.size) {
     throw new LanguageModelError(
       "The split-commit proposal does not cover every changed path.",

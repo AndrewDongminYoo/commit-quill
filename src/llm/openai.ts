@@ -1,5 +1,4 @@
-import { z } from "zod";
-
+import { arrayAt, stringAt } from "./json";
 import { groupsPrompt, messagePrompt } from "./prompts";
 import {
   LanguageModelError,
@@ -13,17 +12,6 @@ import {
   type ProviderSettings,
 } from "./provider";
 import { parseGroups } from "./validation";
-
-const responseSchema = z.object({
-  output: z.array(
-    z.object({
-      type: z.string(),
-      content: z.array(
-        z.object({ type: z.string(), text: z.string().optional() }),
-      ),
-    }),
-  ),
-});
 
 export class OpenAiLanguageModel implements CommitLanguageModel {
   readonly settings: ProviderSettings;
@@ -58,17 +46,11 @@ export class OpenAiLanguageModel implements CommitLanguageModel {
         max_output_tokens: MAX_OUTPUT_TOKENS,
       }),
     });
-    const parsed = responseSchema.safeParse(body);
-    if (!parsed.success) {
-      throw new LanguageModelError(
-        "The OpenAI response did not contain output text.",
-      );
-    }
-
-    for (const output of parsed.data.output) {
-      for (const content of output.content) {
-        if (content.type === "output_text" && content.text !== undefined) {
-          return content.text;
+    for (const output of arrayAt(body, "output")) {
+      for (const content of arrayAt(output, "content")) {
+        const text = stringAt(content, "text");
+        if (stringAt(content, "type") === "output_text" && text !== undefined) {
+          return text;
         }
       }
     }

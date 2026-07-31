@@ -1,17 +1,10 @@
-import { z } from "zod";
-
 import { AnthropicLanguageModel } from "./anthropic";
 import { GeminiLanguageModel } from "./gemini";
+import { recordAt, stringAt } from "./json";
 import { OpenAiLanguageModel } from "./openai";
 import type { CommitConvention } from "../core/types";
 
 const MAX_ERROR_DETAIL = 300;
-
-// OpenAI, Anthropic, and Gemini all nest their human-readable failure reason
-// here, so one schema covers every provider.
-const errorBodySchema = z.object({
-  error: z.object({ message: z.string().min(1) }),
-});
 
 export const providerNames = ["openai", "anthropic", "gemini"] as const;
 
@@ -173,8 +166,8 @@ function readErrorMessage(body: string): string | undefined {
     return undefined;
   }
 
-  const parsed = errorBodySchema.safeParse(parsedJson);
-  return parsed.success ? parsed.data.error.message.trim() : undefined;
+  // OpenAI, Anthropic, and Gemini all nest their failure reason at this path.
+  return stringAt(recordAt(parsedJson, "error"), "message")?.trim();
 }
 
 /**

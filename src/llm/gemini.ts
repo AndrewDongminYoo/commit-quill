@@ -1,5 +1,4 @@
-import { z } from "zod";
-
+import { arrayAt, recordAt, stringAt } from "./json";
 import { groupsPrompt, messagePrompt } from "./prompts";
 import {
   LanguageModelError,
@@ -13,16 +12,6 @@ import {
   type ProviderSettings,
 } from "./provider";
 import { parseGroups } from "./validation";
-
-const responseSchema = z.object({
-  candidates: z.array(
-    z.object({
-      content: z.object({
-        parts: z.array(z.object({ text: z.string().optional() })),
-      }),
-    }),
-  ),
-});
 
 export class GeminiLanguageModel implements CommitLanguageModel {
   readonly settings: ProviderSettings;
@@ -56,17 +45,11 @@ export class GeminiLanguageModel implements CommitLanguageModel {
         generationConfig: { maxOutputTokens: MAX_OUTPUT_TOKENS },
       }),
     });
-    const parsed = responseSchema.safeParse(body);
-    if (!parsed.success) {
-      throw new LanguageModelError(
-        "The Gemini response did not contain candidate text.",
-      );
-    }
-
-    for (const candidate of parsed.data.candidates) {
-      for (const part of candidate.content.parts) {
-        if (part.text !== undefined) {
-          return part.text;
+    for (const candidate of arrayAt(body, "candidates")) {
+      for (const part of arrayAt(recordAt(candidate, "content"), "parts")) {
+        const text = stringAt(part, "text");
+        if (text !== undefined) {
+          return text;
         }
       }
     }

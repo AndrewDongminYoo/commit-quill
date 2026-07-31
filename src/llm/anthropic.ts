@@ -1,5 +1,4 @@
-import { z } from "zod";
-
+import { arrayAt, stringAt } from "./json";
 import { groupsPrompt, messagePrompt } from "./prompts";
 import {
   LanguageModelError,
@@ -13,10 +12,6 @@ import {
   type ProviderSettings,
 } from "./provider";
 import { parseGroups } from "./validation";
-
-const responseSchema = z.object({
-  content: z.array(z.object({ type: z.string(), text: z.string().optional() })),
-});
 
 export class AnthropicLanguageModel implements CommitLanguageModel {
   readonly settings: ProviderSettings;
@@ -52,22 +47,15 @@ export class AnthropicLanguageModel implements CommitLanguageModel {
         messages: [{ role: "user", content: prompt }],
       }),
     });
-    const parsed = responseSchema.safeParse(body);
-    if (!parsed.success) {
-      throw new LanguageModelError(
-        "The Anthropic response did not contain a text block.",
-      );
+    for (const block of arrayAt(body, "content")) {
+      const text = stringAt(block, "text");
+      if (stringAt(block, "type") === "text" && text !== undefined) {
+        return text;
+      }
     }
 
-    const textBlock = parsed.data.content.find(
-      (content) => content.type === "text" && content.text !== undefined,
+    throw new LanguageModelError(
+      "The Anthropic response did not contain a text block.",
     );
-    if (textBlock?.text === undefined) {
-      throw new LanguageModelError(
-        "The Anthropic response did not contain a text block.",
-      );
-    }
-
-    return textBlock.text;
   }
 }

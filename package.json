@@ -134,9 +134,6 @@
     "test": "vscode-test",
     "verify:models": "node scripts/verify-model-catalog.mjs"
   },
-  "dependencies": {
-    "zod": "^4.3.6"
-  },
   "devDependencies": {
     "@types/vscode": "^1.125.0",
     "@types/mocha": "^10.0.10",
