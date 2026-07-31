@@ -12,3 +12,10 @@ vsc-extension-quickstart.md
 **/*.map
 **/*.ts
 **/.vscode-test.*
+docs/**
+.trunk/**
+test-workspace/**
+CLAUDE.md
+pnpm-lock.yaml
+pnpm-workspace.yaml
+.npmrc

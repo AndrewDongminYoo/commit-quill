@@ -3,3 +3,7 @@ dist
 node_modules
 .vscode-test/
 *.vsix
+
+# Scratch repository for the Extension Development Host (see .vscode/launch.json).
+test-workspace/*
+!test-workspace/.gitkeep

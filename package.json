@@ -1,13 +1,30 @@
 {
   "name": "auto-commit-msg",
-  "displayName": "auto-commit-msg",
+  "displayName": "Auto Commit Message",
   "description": "One feature: It writes commit messages for you.",
   "version": "0.0.1",
+  "publisher": "AndrewDongminYoo",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AndrewDongminYoo/auto-commit-msg.git"
+  },
+  "bugs": {
+    "url": "https://github.com/AndrewDongminYoo/auto-commit-msg/issues"
+  },
+  "keywords": [
+    "git",
+    "commit",
+    "conventional-commits",
+    "openai",
+    "anthropic"
+  ],
   "engines": {
     "vscode": "^1.125.0"
   },
   "categories": [
-    "Other"
+    "SCM Providers",
+    "AI"
   ],
   "activationEvents": [],
   "main": "./dist/extension.js",
