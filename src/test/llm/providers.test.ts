@@ -139,3 +139,41 @@ test("rejects a split proposal that contains a path absent from Git status", asy
     /not present in the Git snapshot/,
   );
 });
+
+test("reports the provider's failure reason alongside the status code", async () => {
+  const client = new RecordingHttpClient({
+    status: 404,
+    body: JSON.stringify({
+      type: "error",
+      error: {
+        type: "not_found_error",
+        message: "model: claude-3-5-haiku-20241022",
+      },
+    }),
+  });
+  const model = createLanguageModel(
+    { provider: "anthropic", model: "claude-3-5-haiku-20241022", apiKey: "k" },
+    client,
+  );
+
+  await assert.rejects(
+    model.generateSubject(context),
+    /HTTP 404\. model: claude-3-5-haiku-20241022/,
+  );
+});
+
+test("falls back to the raw body when it is not a provider error envelope", async () => {
+  const client = new RecordingHttpClient({
+    status: 502,
+    body: "upstream request timeout",
+  });
+  const model = createLanguageModel(
+    { provider: "gemini", model: "gemini-test", apiKey: "k" },
+    client,
+  );
+
+  await assert.rejects(
+    model.generateSubject(context),
+    /HTTP 502\. upstream request timeout/,
+  );
+});

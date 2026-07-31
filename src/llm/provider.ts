@@ -1,7 +1,17 @@
+import { z } from "zod";
+
 import { AnthropicLanguageModel } from "./anthropic";
 import { GeminiLanguageModel } from "./gemini";
 import { OpenAiLanguageModel } from "./openai";
 import type { CommitConvention } from "../core/types";
+
+const MAX_ERROR_DETAIL = 300;
+
+// OpenAI, Anthropic, and Gemini all nest their human-readable failure reason
+// here, so one schema covers every provider.
+const errorBodySchema = z.object({
+  error: z.object({ message: z.string().min(1) }),
+});
 
 export const providerNames = ["openai", "anthropic", "gemini"] as const;
 
@@ -93,7 +103,7 @@ export async function postForJson(
   const response = await client.post(request);
   if (response.status < 200 || response.status >= 300) {
     throw new LanguageModelError(
-      `The provider returned HTTP ${response.status}.`,
+      `The provider returned HTTP ${response.status}.${errorDetail(response.body)}`,
     );
   }
 
@@ -105,6 +115,33 @@ export async function postForJson(
       error,
     );
   }
+}
+
+// Providers explain *why* a request failed only in the response body: a wrong
+// key, a retired model, and an exhausted quota otherwise look identical.
+// Safe to surface — API keys travel in headers, never in the body.
+function errorDetail(body: string): string {
+  const trimmed = body.trim();
+  if (trimmed.length === 0) {
+    return "";
+  }
+
+  const detail = readErrorMessage(trimmed) ?? trimmed;
+  return detail.length > MAX_ERROR_DETAIL
+    ? ` ${detail.slice(0, MAX_ERROR_DETAIL)}…`
+    : ` ${detail}`;
+}
+
+function readErrorMessage(body: string): string | undefined {
+  let parsedJson: unknown;
+  try {
+    parsedJson = JSON.parse(body);
+  } catch {
+    return undefined;
+  }
+
+  const parsed = errorBodySchema.safeParse(parsedJson);
+  return parsed.success ? parsed.data.error.message.trim() : undefined;
 }
 
 export function requireSubject(text: string): string {
