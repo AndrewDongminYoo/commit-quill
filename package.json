@@ -15,7 +15,8 @@
     "commands": [
       {
         "command": "auto-commit-msg.generateCommit",
-        "title": "Auto Commit Message: Generate Commit"
+        "title": "Auto Commit Message: Generate Commit",
+        "icon": "$(sparkle)"
       },
       {
         "command": "auto-commit-msg.configureProvider",
@@ -45,11 +46,18 @@
         "autoCommitMsg.provider": {
           "type": "string",
           "enum": [
+            "",
             "openai",
             "anthropic",
             "gemini"
           ],
-          "default": "openai",
+          "enumDescriptions": [
+            "Not configured",
+            "OpenAI API",
+            "Anthropic API",
+            "Gemini API"
+          ],
+          "default": "",
           "scope": "application",
           "description": "The provider used to generate commit messages."
         },

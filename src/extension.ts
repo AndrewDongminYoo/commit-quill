@@ -7,6 +7,11 @@ import {
   type ProviderName,
   type ProviderSettings,
 } from "./llm/provider";
+import {
+  modelOptionsForProvider,
+  nextProviderSetupStep,
+  type ProviderModelOption,
+} from "./provider-setup";
 import { VsCodeCommitUserInterface } from "./vscode-user-interface";
 import { CommitWorkflow } from "./workflow/commit-workflow";
 
@@ -16,6 +21,17 @@ export type ExtensionRuntimeContext = {
   readonly secrets: vscode.SecretStorage;
   readonly subscriptions: vscode.Disposable[];
 };
+
+type ProviderQuickPickItem = vscode.QuickPickItem & {
+  readonly provider: ProviderName;
+};
+
+type ModelQuickPickItem =
+  | (vscode.QuickPickItem & {
+      readonly selectionKind: "catalog";
+      readonly model: string;
+    })
+  | (vscode.QuickPickItem & { readonly selectionKind: "custom" });
 
 class ExtensionInvariantError extends Error {
   constructor(value: never) {
@@ -29,9 +45,8 @@ export function activate(context: ExtensionRuntimeContext): void {
     vscode.commands.registerCommand("auto-commit-msg.generateCommit", () =>
       generateCommit(context),
     ),
-    vscode.commands.registerCommand(
-      "auto-commit-msg.configureProvider",
-      configureProvider,
+    vscode.commands.registerCommand("auto-commit-msg.configureProvider", () =>
+      configureProvider(context),
     ),
     vscode.commands.registerCommand("auto-commit-msg.setApiKey", () =>
       setApiKey(context),
@@ -77,36 +92,43 @@ async function generateCommit(context: ExtensionRuntimeContext): Promise<void> {
   }
 }
 
-async function configureProvider(): Promise<void> {
+async function configureProvider(
+  context: ExtensionRuntimeContext,
+): Promise<ProviderSettings | undefined> {
   const provider = await selectProvider();
   if (provider === undefined) {
-    return;
+    return undefined;
   }
 
   const configuration = vscode.workspace.getConfiguration("autoCommitMsg");
-  const model = await vscode.window.showInputBox({
-    prompt: `Enter the ${provider} model name.`,
-    value: configuration.get<string>(modelSettingKey(provider)),
-    validateInput: (value) =>
-      value.trim().length > 0 ? undefined : "A model name is required.",
-  });
-  if (model === undefined) {
-    return;
-  }
-
   await configuration.update(
     "provider",
     provider,
     vscode.ConfigurationTarget.Global,
   );
-  await configuration.update(
-    modelSettingKey(provider),
-    model.trim(),
-    vscode.ConfigurationTarget.Global,
-  );
+
+  const model = await storeModelSelection(provider);
+  if (model === undefined) {
+    return undefined;
+  }
+
+  const apiKey = await context.secrets.get(secretKey(provider));
+  if (apiKey !== undefined && apiKey.trim().length > 0) {
+    await vscode.window.showInformationMessage(
+      `${provider} is configured as the active provider.`,
+    );
+    return { provider, model, apiKey: apiKey.trim() };
+  }
+
+  const storedApiKey = await promptForApiKey(context, provider);
+  if (storedApiKey === undefined) {
+    return undefined;
+  }
+
   await vscode.window.showInformationMessage(
     `${provider} is configured as the active provider.`,
   );
+  return { provider, model, apiKey: storedApiKey };
 }
 
 async function setApiKey(context: ExtensionRuntimeContext): Promise<void> {
@@ -115,6 +137,20 @@ async function setApiKey(context: ExtensionRuntimeContext): Promise<void> {
     return;
   }
 
+  const apiKey = await promptForApiKey(context, provider);
+  if (apiKey === undefined) {
+    return;
+  }
+
+  await vscode.window.showInformationMessage(
+    `Stored the ${provider} API key in VS Code Secret Storage.`,
+  );
+}
+
+async function promptForApiKey(
+  context: ExtensionRuntimeContext,
+  provider: ProviderName,
+): Promise<string | undefined> {
   const apiKey = await vscode.window.showInputBox({
     prompt: `Enter the ${provider} API key.`,
     password: true,
@@ -123,13 +159,12 @@ async function setApiKey(context: ExtensionRuntimeContext): Promise<void> {
       value.trim().length > 0 ? undefined : "An API key is required.",
   });
   if (apiKey === undefined) {
-    return;
+    return undefined;
   }
 
-  await context.secrets.store(secretKey(provider), apiKey.trim());
-  await vscode.window.showInformationMessage(
-    `Stored the ${provider} API key in VS Code Secret Storage.`,
-  );
+  const trimmedApiKey = apiKey.trim();
+  await context.secrets.store(secretKey(provider), trimmedApiKey);
+  return trimmedApiKey;
 }
 
 async function removeApiKey(context: ExtensionRuntimeContext): Promise<void> {
@@ -149,30 +184,30 @@ async function readProviderSettings(
 ): Promise<ProviderSettings | undefined> {
   const configuration = vscode.workspace.getConfiguration("autoCommitMsg");
   const provider = parseProvider(configuration.get<unknown>("provider"));
-  if (provider === undefined) {
-    await vscode.window.showErrorMessage(
-      "Select OpenAI, Anthropic, or Gemini in Auto Commit Message settings.",
-    );
-    return undefined;
-  }
+  const step = nextProviderSetupStep({
+    provider,
+    model:
+      provider === undefined
+        ? undefined
+        : configuration.get<string>(modelSettingKey(provider), ""),
+    apiKey:
+      provider === undefined
+        ? undefined
+        : await context.secrets.get(secretKey(provider)),
+  });
 
-  const model = configuration.get<string>(modelSettingKey(provider), "").trim();
-  if (model.length === 0) {
-    await vscode.window.showErrorMessage(
-      `Configure an ${provider} model before generating a commit.`,
-    );
-    return undefined;
+  switch (step.kind) {
+    case "provider":
+      return configureProvider(context);
+    case "model":
+      return completeModelSelection(context, step.provider);
+    case "api-key":
+      return completeApiKeyConfiguration(context, step.provider);
+    case "ready":
+      return step.settings;
+    default:
+      return assertNever(step);
   }
-
-  const apiKey = await context.secrets.get(secretKey(provider));
-  if (apiKey === undefined || apiKey.trim().length === 0) {
-    await vscode.window.showErrorMessage(
-      `Store an ${provider} API key before generating a commit.`,
-    );
-    return undefined;
-  }
-
-  return { provider, model, apiKey };
 }
 
 function activeWorkspacePath(): string | undefined {
@@ -180,11 +215,108 @@ function activeWorkspacePath(): string | undefined {
 }
 
 async function selectProvider(): Promise<ProviderName | undefined> {
-  return parseProvider(
-    await vscode.window.showQuickPick([...providerNames], {
-      placeHolder: "Select an AI provider",
+  const providerOptions: readonly ProviderQuickPickItem[] = providerNames.map(
+    (provider) => ({
+      label: providerLabel(provider),
+      description: `${providerLabel(provider)} API`,
+      provider,
     }),
   );
+  const selected = await vscode.window.showQuickPick<ProviderQuickPickItem>(
+    providerOptions,
+    { placeHolder: "Select an AI provider" },
+  );
+  return selected?.provider;
+}
+
+async function selectModel(
+  provider: ProviderName,
+): Promise<string | undefined> {
+  const modelOptions: readonly ModelQuickPickItem[] = [
+    ...modelOptionsForProvider(provider).map(toModelQuickPickItem),
+    {
+      label: "$(edit) Enter a custom model ID",
+      description: "Use a model that is available to your account.",
+      selectionKind: "custom",
+    },
+  ];
+  const selected = await vscode.window.showQuickPick<ModelQuickPickItem>(
+    modelOptions,
+    { placeHolder: `Select a ${providerLabel(provider)} model` },
+  );
+  if (selected === undefined) {
+    return undefined;
+  }
+
+  switch (selected.selectionKind) {
+    case "catalog":
+      return selected.model;
+    case "custom":
+      return promptForCustomModel(provider);
+    default:
+      return assertNever(selected);
+  }
+}
+
+async function storeModelSelection(
+  provider: ProviderName,
+): Promise<string | undefined> {
+  const model = await selectModel(provider);
+  if (model === undefined) {
+    return undefined;
+  }
+
+  await vscode.workspace
+    .getConfiguration("autoCommitMsg")
+    .update(
+      modelSettingKey(provider),
+      model,
+      vscode.ConfigurationTarget.Global,
+    );
+  return model;
+}
+
+function toModelQuickPickItem(option: ProviderModelOption): ModelQuickPickItem {
+  return {
+    label: option.label,
+    description: option.description,
+    detail: option.model,
+    selectionKind: "catalog",
+    model: option.model,
+  };
+}
+
+async function promptForCustomModel(
+  provider: ProviderName,
+): Promise<string | undefined> {
+  const model = await vscode.window.showInputBox({
+    prompt: `Enter the ${providerLabel(provider)} model ID.`,
+    validateInput: (value) =>
+      value.trim().length > 0 ? undefined : "A model ID is required.",
+  });
+  return model?.trim();
+}
+
+async function completeModelSelection(
+  context: ExtensionRuntimeContext,
+  provider: ProviderName,
+): Promise<ProviderSettings | undefined> {
+  const model = await storeModelSelection(provider);
+  if (model === undefined) {
+    return undefined;
+  }
+  return readProviderSettings(context);
+}
+
+async function completeApiKeyConfiguration(
+  context: ExtensionRuntimeContext,
+  provider: ProviderName,
+): Promise<ProviderSettings | undefined> {
+  if ((await promptForApiKey(context, provider)) === undefined) {
+    return undefined;
+  }
+
+  return readProviderSettings(context);
 }
 
 function parseProvider(value: unknown): ProviderName | undefined {
@@ -195,6 +327,19 @@ function parseProvider(value: unknown): ProviderName | undefined {
       return value;
     default:
       return undefined;
+  }
+}
+
+function providerLabel(provider: ProviderName): string {
+  switch (provider) {
+    case "openai":
+      return "OpenAI";
+    case "anthropic":
+      return "Anthropic";
+    case "gemini":
+      return "Gemini";
+    default:
+      return assertNever(provider);
   }
 }
 
