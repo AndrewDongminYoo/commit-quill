@@ -43,8 +43,10 @@ The layering exists so that almost nothing needs VS Code to be tested:
 - **`src/core/git.ts`** — every Git operation, via `execFile` on the `git` binary. Never touches the built-in Git extension's API. Produces the `RepositorySnapshot` union (`clean` | `staged` | `unstaged`) that drives the whole workflow.
 - **`src/llm/`** — `provider.ts` holds the shared contracts, the `createLanguageModel` factory, and `FetchHttpClient`. The injectable `HttpClient` is the seam that lets provider tests assert exact request bodies with no network. `openai.ts` / `anthropic.ts` / `gemini.ts` are one adapter each; `prompts.ts` builds both prompts; `validation.ts` parses and validates split-commit proposals with zod.
 
-Outside `src/test/`, **`vscode` is imported in exactly two files** — `extension.ts` and `vscode-user-interface.ts` (`src/test/extension.test.ts` is the only test that imports it, which is why it needs the Extension Host).
+Outside `src/test/`, **`vscode` is imported in exactly three files** — `extension.ts`, `vscode-user-interface.ts`, and `vscode-git.ts` (`src/test/extension.test.ts` is the only test that imports it, which is why it needs the Extension Host).
 Keep it that way — it is what makes the plain-mocha path above work.
+
+`src/vscode-git.ts` wraps the built-in Git extension's public `getAPI(1)` surface, used only to resolve which repository the user meant and to write a drafted message into its Source Control input box. `@types/vscode` does not type that API, so the four members used are declared locally rather than vendoring a `git.d.ts`. Every Git read and mutation still goes through `src/core/git.ts`.
 
 ## Invariants worth preserving
 

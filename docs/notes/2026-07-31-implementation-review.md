@@ -33,7 +33,9 @@ Three consequences:
 The hybrid honors both: **staged → write into the input box and stop** (multi-line becomes possible, the user commits with the button they already use); **unstaged split → keep committing directly**, since a stage-commit loop has nowhere else to put each message.
 An `autoCommitMsg.commitDirectly` setting preserves today's behavior for anyone who prefers it.
 
-### 2. The spec's Git-extension clause is the blocker for 1.1 and 1.3 — and it rests on a wrong premise
+### 2. The spec's Git-extension clause was never the blocker — it was misread
+
+> **Correction (2026-07-31, after this note was first written).** The paragraph below argued the spec clause had to be narrowed to "_undocumented_ internals". It already said exactly that. The clause was correctly scoped from the start and never forbade the public API; what blocked tiers 1.1 and 1.3 was an over-broad reading of it, not its wording. The spec has since been extended with a positive statement of what the public API is used for. The technical content below stands; the framing was wrong.
 
 `docs/specs/2026-07-31-auto-commit-msg-design.md` states: _"It does not use undocumented internals of VS Code's built-in Git extension."_
 

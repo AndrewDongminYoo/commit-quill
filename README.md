@@ -27,6 +27,10 @@ Keys are stored separately per provider in VS Code Secret Storage and are never 
 
 When staged changes exist, the extension sends only the staged diff, staged file list, and recent commit subjects to the selected provider.
 
+The generated subject is written into the Source Control input box, where you review it beside your diff and commit with the button you already use. Text already in the box is kept and the subject is appended after it. Set `autoCommitMsg.commitDirectly` to confirm and commit in one step instead.
+
+Diffs are truncated at `autoCommitMsg.maxDiffCharacters` (64000 by default), and untracked files that are binary or larger than 128 KB are named rather than sent. You are told whenever either happens.
+
 It follows a detected stable local commit convention.
 
 When no stable convention exists, it asks for a Conventional Commit subject.
