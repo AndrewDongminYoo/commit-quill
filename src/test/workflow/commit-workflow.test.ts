@@ -1,6 +1,7 @@
 import * as assert from "node:assert";
 import { afterEach, test } from "mocha";
 
+import { defaultSnapshotLimits } from "../../core/git";
 import type { CommitLanguageModel, CommitGroup } from "../../llm/provider";
 import {
   CommitWorkflow,
@@ -34,6 +35,7 @@ class FakeUserInterface implements CommitUserInterface {
   readonly acceptsSplit: boolean;
   readonly subjects: readonly (string | undefined)[];
   information: string | undefined;
+  drafted: string | undefined;
   private subjectIndex = 0;
 
   constructor(
@@ -50,6 +52,10 @@ class FakeUserInterface implements CommitUserInterface {
 
   async confirmSplit(): Promise<boolean> {
     return this.acceptsSplit;
+  }
+
+  async draftSubject(subject: string): Promise<void> {
+    this.drafted = subject;
   }
 
   async editSubject(): Promise<string | undefined> {
@@ -129,4 +135,27 @@ test("stages and commits each approved split group separately", async () => {
     /docs: add documentation\nfeat: add feature/,
   );
   assert.strictEqual(await fixture.output(["status", "--short"]), "");
+});
+
+test("drafts the staged subject without committing when asked to", async () => {
+  const fixture = await createFixture();
+  await fixture.write("README.md", "staged\n");
+  await fixture.stage("README.md");
+  const model = new FakeLanguageModel("feat: draft this subject");
+  const userInterface = new FakeUserInterface(true, []);
+
+  const outcome = await new CommitWorkflow(
+    model,
+    userInterface,
+    defaultSnapshotLimits,
+    "draft",
+  ).run(fixture.repositoryPath);
+
+  assert.deepStrictEqual(outcome, { kind: "drafted" });
+  assert.strictEqual(userInterface.drafted, "feat: draft this subject");
+  assert.match(
+    await fixture.output(["log", "-1", "--format=%s"]),
+    /chore: initialize fixture/,
+  );
+  assert.match(await fixture.output(["status", "--short"]), /^M {2}README.md/);
 });

@@ -12,12 +12,25 @@ import type { CommitGroup, CommitLanguageModel } from "../llm/provider";
 export type WorkflowOutcome =
   | { readonly kind: "nothing-to-commit" }
   | { readonly kind: "cancelled" }
+  | { readonly kind: "drafted" }
   | { readonly kind: "committed"; readonly count: number };
+
+/**
+ * What to do with the subject generated for an already-staged tree.
+ *
+ * `draft` hands it to the user's Source Control input box and stops, which is
+ * what GitLens does and the only path that can carry a multi-line message.
+ * `commit` keeps the original behavior of confirming and committing directly.
+ * The split path always commits — a stage-commit loop has nowhere to put each
+ * intermediate message.
+ */
+export type StagedOutput = "draft" | "commit";
 
 export interface CommitUserInterface {
   showInformation(message: string): Promise<void>;
   confirmSplit(groups: readonly CommitGroup[]): Promise<boolean>;
   editSubject(subject: string): Promise<string | undefined>;
+  draftSubject(subject: string): Promise<void>;
 }
 
 class WorkflowInvariantError extends Error {
@@ -31,15 +44,18 @@ export class CommitWorkflow {
   readonly model: CommitLanguageModel;
   readonly userInterface: CommitUserInterface;
   readonly limits: SnapshotLimits;
+  readonly stagedOutput: StagedOutput;
 
   constructor(
     model: CommitLanguageModel,
     userInterface: CommitUserInterface,
     limits: SnapshotLimits = defaultSnapshotLimits,
+    stagedOutput: StagedOutput = "commit",
   ) {
     this.model = model;
     this.userInterface = userInterface;
     this.limits = limits;
+    this.stagedOutput = stagedOutput;
   }
 
   async run(cwd: string): Promise<WorkflowOutcome> {
@@ -74,6 +90,11 @@ export class CommitWorkflow {
       files: snapshot.files,
       convention: detectConvention(snapshot.subjects),
     });
+    if (this.stagedOutput === "draft") {
+      await this.userInterface.draftSubject(subject);
+      return { kind: "drafted" };
+    }
+
     const confirmedSubject = await this.userInterface.editSubject(subject);
     if (confirmedSubject === undefined) {
       return { kind: "cancelled" };

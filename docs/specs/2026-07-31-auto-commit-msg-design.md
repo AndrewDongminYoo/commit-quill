@@ -25,6 +25,10 @@ The extension uses the installed `git` executable for all repository inspection 
 
 It does not use undocumented internals of VS Code's built-in Git extension.
 
+It does use that extension's public, versioned API (`getAPI(1)`) for two things the `git` executable cannot answer: which repository the user meant, and where to put a drafted message. Repository resolution prefers the Source Control item the user clicked, then the only open repository, then a picker. When a staged tree produces a subject, it is written to that repository's Source Control input box for review rather than committed, unless `autoCommitMsg.commitDirectly` is set. The split-commit path always commits directly, because a stage-commit loop has nowhere to put each intermediate message.
+
+Only the API members actually used are declared, in `src/vscode-git.ts`. When the Git extension is unavailable the extension falls back to the first workspace folder and commits directly.
+
 `git diff --cached` is the sole content source when staged changes exist.
 
 Unstaged files are never staged or committed in that path.

@@ -79,6 +79,12 @@
           "scope": "application",
           "description": "The Gemini model name."
         },
+        "autoCommitMsg.commitDirectly": {
+          "type": "boolean",
+          "default": false,
+          "scope": "application",
+          "description": "Commit staged changes immediately after you confirm the generated subject, instead of writing it into the Source Control input box for review. Splitting an unstaged tree always commits directly."
+        },
         "autoCommitMsg.maxDiffCharacters": {
           "type": "integer",
           "minimum": 1000,

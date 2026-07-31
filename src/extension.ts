@@ -15,7 +15,7 @@ import {
 } from "./provider-setup";
 import { resolveRepository } from "./vscode-git";
 import { VsCodeCommitUserInterface } from "./vscode-user-interface";
-import { CommitWorkflow } from "./workflow/commit-workflow";
+import { CommitWorkflow, type StagedOutput } from "./workflow/commit-workflow";
 
 const secretKeyPrefix = "auto-commit-msg.api-key";
 
@@ -87,10 +87,16 @@ async function generateCommit(
       return;
     }
 
+    // Drafting needs a repository handle for its input box, so a workspace-
+    // folder fallback (no Git extension) always commits directly.
+    const stagedOutput: StagedOutput =
+      repository !== undefined && !readCommitDirectly() ? "draft" : "commit";
+
     await new CommitWorkflow(
       createLanguageModel(settings),
-      new VsCodeCommitUserInterface(),
+      new VsCodeCommitUserInterface(repository),
       readSnapshotLimits(),
+      stagedOutput,
     ).run(workspacePath);
   } catch (error: unknown) {
     const message =
@@ -217,6 +223,12 @@ async function readProviderSettings(
     default:
       return assertNever(step);
   }
+}
+
+function readCommitDirectly(): boolean {
+  return vscode.workspace
+    .getConfiguration("autoCommitMsg")
+    .get<boolean>("commitDirectly", false);
 }
 
 function readSnapshotLimits(): SnapshotLimits {
