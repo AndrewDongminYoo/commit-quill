@@ -10,7 +10,26 @@ const execFile = promisify(execFileCallback);
 export const defaultSnapshotLimits: SnapshotLimits = {
   maxDiffCharacters: 64_000,
   maxUntrackedFileBytes: 128 * 1024,
+  collapsedPaths: [
+    "**/*.lock",
+    "**/package-lock.json",
+    "**/pnpm-lock.yaml",
+    "**/npm-shrinkwrap.json",
+    "**/go.sum",
+    "**/*.pbxproj",
+    "**/*.g.dart",
+    "**/*.freezed.dart",
+  ],
 };
+
+// `**` needs the `glob` magic word. Without it `:(exclude)**/package-lock.json`
+// matches nothing and silently returns the diff unchanged — the failure looks
+// exactly like success.
+const excludePathspec = (patterns: readonly string[]): readonly string[] =>
+  patterns.map((pattern) => `:(exclude,glob)${pattern}`);
+
+const includePathspec = (patterns: readonly string[]): readonly string[] =>
+  patterns.map((pattern) => `:(glob)${pattern}`);
 
 type GitStatusEntry = {
   readonly indexStatus: string;
@@ -48,20 +67,19 @@ export async function inspectRepository(
     (entry) => entry.indexStatus !== " " && entry.indexStatus !== "?",
   );
   if (stagedEntries.length > 0) {
-    const diff = await runGit(repositoryPath, [
-      "diff",
-      "--cached",
-      "--no-ext-diff",
-      "--unified=3",
-    ]);
-    const capped = capDiff(diff, limits.maxDiffCharacters);
+    const staged = await diffWithCollapsed(
+      repositoryPath,
+      ["diff", "--cached"],
+      limits.collapsedPaths,
+    );
+    const capped = capDiff(staged.diff, limits.maxDiffCharacters);
     return {
       kind: "staged",
       diff: capped.diff,
       files: stagedEntries.map((entry) => entry.path),
       renames: renamesOf(stagedEntries),
       subjects: await recentSubjects(repositoryPath),
-      notices: capped.notices,
+      notices: [...staged.notices, ...capped.notices],
     };
   }
 
@@ -197,31 +215,101 @@ async function unstagedDiff(
   entries: readonly GitStatusEntry[],
   limits: SnapshotLimits,
 ): Promise<DiffPart> {
-  const trackedDiff = await runGit(cwd, [
-    "diff",
-    "--no-ext-diff",
-    "--unified=3",
-  ]);
+  const tracked = await diffWithCollapsed(cwd, ["diff"], limits.collapsedPaths);
+  // An untracked lockfile has no diff to exclude, so ask Git which of them the
+  // same patterns match rather than reimplementing its globbing here.
+  const collapsedUntracked = new Set(
+    splitLines(
+      await runGit(cwd, [
+        "ls-files",
+        "--others",
+        "--exclude-standard",
+        "--",
+        ...includePathspec(limits.collapsedPaths),
+      ]),
+    ),
+  );
   const untracked = await Promise.all(
     entries
       .filter((entry) => entry.indexStatus === "?")
       .map((entry) =>
-        readUntrackedFile(cwd, entry.path, limits.maxUntrackedFileBytes),
+        collapsedUntracked.has(entry.path)
+          ? generatedFileNote(entry.path)
+          : readUntrackedFile(cwd, entry.path, limits.maxUntrackedFileBytes),
       ),
   );
   const skipped = untracked
     .filter((part) => part.notices.length > 0)
     .flatMap((part) => part.notices);
   return {
-    diff: [trackedDiff, ...untracked.map((part) => part.diff)]
+    diff: [tracked.diff, ...untracked.map((part) => part.diff)]
       .filter((part) => part.length > 0)
       .join("\n"),
-    notices:
-      skipped.length > 0
+    notices: [
+      ...tracked.notices,
+      ...(skipped.length > 0
         ? [
             `Content omitted for ${skipped.length} file(s): ${skipped.join(", ")}.`,
           ]
-        : [],
+        : []),
+    ],
+  };
+}
+
+function splitLines(output: string): readonly string[] {
+  return output.split("\n").filter((line) => line.length > 0);
+}
+
+/**
+ * Run a diff with the collapsed paths held out, then describe them by their
+ * line counts alone. The model still learns that the lockfile moved and by how
+ * much, which is all a commit message needs from it.
+ */
+async function diffWithCollapsed(
+  cwd: string,
+  command: readonly string[],
+  collapsedPaths: readonly string[],
+): Promise<DiffPart> {
+  const base = [...command, "--no-ext-diff", "--unified=3"];
+  if (collapsedPaths.length === 0) {
+    return { diff: await runGit(cwd, base), notices: [] };
+  }
+
+  const diff = await runGit(cwd, [
+    ...base,
+    "--",
+    ".",
+    ...excludePathspec(collapsedPaths),
+  ]);
+  const collapsed = splitLines(
+    await runGit(cwd, [
+      ...command,
+      "--numstat",
+      "--",
+      ...includePathspec(collapsedPaths),
+    ]),
+  ).map(describeNumstat);
+  if (collapsed.length === 0) {
+    return { diff, notices: [] };
+  }
+
+  return {
+    diff: `${diff}\nGenerated files changed, content omitted:\n${collapsed.join("\n")}`,
+    notices: [
+      `Summarised ${collapsed.length} generated file(s) instead of sending their contents.`,
+    ],
+  };
+}
+
+function describeNumstat(line: string): string {
+  const [added, removed, path] = line.split("\t");
+  return `${path ?? line} (+${added ?? "?"} -${removed ?? "?"})`;
+}
+
+function generatedFileNote(path: string): DiffPart {
+  return {
+    diff: `diff --git a/${path} b/${path}\nnew file mode 100644\n--- /dev/null\n+++ b/${path}\n@@\n+(new generated file — content omitted)`,
+    notices: [],
   };
 }
 

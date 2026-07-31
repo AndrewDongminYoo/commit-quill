@@ -31,6 +31,8 @@ The generated subject is written into the Source Control input box, where you re
 
 Diffs are truncated at `commitQuill.maxDiffCharacters` (64000 by default), and untracked files that are binary or larger than 128 KB are named rather than sent. You are told whenever either happens.
 
+Lockfiles and generated project files are replaced by a line count before any of this, because they are usually the largest and least informative part of a diff. In one measured commit a `package-lock.json` regeneration was 86% of the diff and more than twice the whole character budget on its own, which pushed every source file past the cut — the model would have seen nothing but lockfile noise. Collapsing it moved the first source file from character 140,972 to 4,890. `commitQuill.collapsedPaths` holds the globs; set it to `[]` to send everything.
+
 Each provider call shows a cancellable progress notification. Cancelling aborts the in-flight request and ends the command without creating a commit.
 
 It follows a detected stable local commit convention. Anything you put in `commitQuill.customInstructions` is appended after that and takes precedence over it, which is where a house convention or a required issue trailer belongs.

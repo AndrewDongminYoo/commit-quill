@@ -290,14 +290,16 @@ function readCommitDirectly(): boolean {
 }
 
 function readSnapshotLimits(): SnapshotLimits {
+  const configuration = vscode.workspace.getConfiguration("commitQuill");
   return {
     ...defaultSnapshotLimits,
-    maxDiffCharacters: vscode.workspace
-      .getConfiguration("commitQuill")
-      .get<number>(
-        "maxDiffCharacters",
-        defaultSnapshotLimits.maxDiffCharacters,
-      ),
+    maxDiffCharacters: configuration.get<number>(
+      "maxDiffCharacters",
+      defaultSnapshotLimits.maxDiffCharacters,
+    ),
+    collapsedPaths: configuration.get<string[]>("collapsedPaths", [
+      ...defaultSnapshotLimits.collapsedPaths,
+    ]),
   };
 }
 

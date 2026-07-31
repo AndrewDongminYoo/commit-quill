@@ -2,8 +2,8 @@
   "name": "commit-quill",
   "displayName": "Commit Quill",
   "description": "One feature: It writes commit messages for you.",
-  "version": "0.0.1",
-  "publisher": "AndrewDongminYoo",
+  "version": "0.0.2",
+  "publisher": "DongminYu",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -127,6 +127,24 @@
           "default": "",
           "scope": "application",
           "description": "Model used only for the split-commit proposal, on the same provider as the main model. Grouping files by why they changed is harder than summarising one staged diff, so a stronger model pays off here without costing more on ordinary commits. Leave empty to reuse the configured model."
+        },
+        "commitQuill.collapsedPaths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "**/*.lock",
+            "**/package-lock.json",
+            "**/pnpm-lock.yaml",
+            "**/npm-shrinkwrap.json",
+            "**/go.sum",
+            "**/*.pbxproj",
+            "**/*.g.dart",
+            "**/*.freezed.dart"
+          ],
+          "scope": "application",
+          "markdownDescription": "Git pathspec globs whose contents are replaced by a line count before the diff is sent. Lockfiles and generated project files are usually the largest and least informative part of a diff, and can push real source changes past `#commitQuill.maxDiffCharacters#`. Set to `[]` to send everything."
         }
       }
     }
