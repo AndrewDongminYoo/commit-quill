@@ -61,4 +61,7 @@ These are load-bearing and enforced by tests:
 
 Commit subjects follow the repo's detected convention; `detectConvention` falls back to Conventional Commits when the last 20 subjects show no stable prefix.
 
-Provider model IDs are a hardcoded catalog in `src/provider-setup.ts` and go stale — verify against each provider's models endpoint before adding or trusting one.
+Provider model IDs live in `src/llm/model-catalog.ts` and go stale — a retired ID returns 404 the first time a user picks it.
+Before a version bump, run `pnpm run verify:models` with `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` set: it checks every curated ID against the provider's live list, prints other IDs available on the account, and exits non-zero if one is gone.
+Providers without a key are reported as skipped, never as passing.
+Curation stays human — picking "recommended / balanced / highest" out of a raw list is a judgment call — so update the entries and `catalogVerifiedOn` by hand.
