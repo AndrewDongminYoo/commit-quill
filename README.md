@@ -8,13 +8,16 @@ The extension never commits without showing an editable commit subject and recei
 
 - VS Code 1.125 or later.
 - Git available on the VS Code extension host's `PATH`.
-- An API key and model name for OpenAI, Anthropic, or Gemini.
+- An API key for OpenAI, Anthropic, or Gemini.
 
 ## Setup
 
-1. Run **Auto Commit Message: Configure Provider** and select a provider and model name.
-2. Run **Auto Commit Message: Set API Key** and enter the key for that provider.
-3. Run **Auto Commit Message: Generate Commit** from the Command Palette or the Source Control title bar.
+1. Run **Auto Commit Message: Generate Commit** from the Command Palette or the sparkle icon in the Source Control title bar.
+2. If required, select a provider, select one of its listed models (or enter a custom model ID), and enter its API key.
+
+Selecting a provider always shows its model list.
+When that provider already has a stored key, setup ends after model selection.
+Otherwise, it immediately asks for the key.
 
 Model names are stored in VS Code global settings.
 
