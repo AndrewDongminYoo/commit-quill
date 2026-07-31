@@ -47,3 +47,45 @@ test("includes untracked files in an unstaged snapshot", async () => {
   assert.deepStrictEqual(snapshot.files, ["notes.md"]);
   assert.match(snapshot.diff, /unstaged/);
 });
+
+test("enumerates files inside an untracked directory", async () => {
+  const fixture = await createFixture();
+  await fixture.writeIn("pkg/nested", "note.md", "fresh\n");
+
+  const snapshot = await inspectRepository(fixture.repositoryPath);
+
+  assert.strictEqual(snapshot.kind, "unstaged");
+  assert.deepStrictEqual(snapshot.files, ["pkg/nested/note.md"]);
+  assert.match(snapshot.diff, /fresh/);
+});
+
+test("omits untracked binary content but still names the file", async () => {
+  const fixture = await createFixture();
+  await fixture.writeBytes("logo.png", Buffer.from([0x89, 0x50, 0x00, 0x1a]));
+
+  const snapshot = await inspectRepository(fixture.repositoryPath);
+
+  assert.strictEqual(snapshot.kind, "unstaged");
+  assert.match(snapshot.diff, /logo\.png/);
+  assert.match(snapshot.diff, /new binary file/);
+  assert.deepStrictEqual(snapshot.notices, [
+    "Content omitted for 1 file(s): logo.png.",
+  ]);
+});
+
+test("truncates an oversized diff and says so", async () => {
+  const fixture = await createFixture();
+  await fixture.write("notes.md", "x".repeat(5000));
+
+  const snapshot = await inspectRepository(fixture.repositoryPath, {
+    maxDiffCharacters: 1000,
+    maxUntrackedFileBytes: 128 * 1024,
+  });
+
+  assert.strictEqual(snapshot.kind, "unstaged");
+  assert.ok(snapshot.diff.length < 1200);
+  assert.match(snapshot.diff, /diff truncated at 1000 characters/);
+  assert.deepStrictEqual(snapshot.notices, [
+    "The diff was truncated to 1000 characters, so later changes were not sent.",
+  ]);
+});

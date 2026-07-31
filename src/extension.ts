@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 
-import { inspectRepository } from "./core/git";
+import { defaultSnapshotLimits, hasChanges } from "./core/git";
+import type { SnapshotLimits } from "./core/types";
 import {
   createLanguageModel,
   providerNames,
@@ -69,7 +70,7 @@ async function generateCommit(context: ExtensionRuntimeContext): Promise<void> {
       return;
     }
 
-    if ((await inspectRepository(workspacePath)).kind === "clean") {
+    if (!(await hasChanges(workspacePath))) {
       await vscode.window.showInformationMessage("Nothing to commit.");
       return;
     }
@@ -82,6 +83,7 @@ async function generateCommit(context: ExtensionRuntimeContext): Promise<void> {
     await new CommitWorkflow(
       createLanguageModel(settings),
       new VsCodeCommitUserInterface(),
+      readSnapshotLimits(),
     ).run(workspacePath);
   } catch (error: unknown) {
     const message =
@@ -208,6 +210,18 @@ async function readProviderSettings(
     default:
       return assertNever(step);
   }
+}
+
+function readSnapshotLimits(): SnapshotLimits {
+  return {
+    ...defaultSnapshotLimits,
+    maxDiffCharacters: vscode.workspace
+      .getConfiguration("autoCommitMsg")
+      .get<number>(
+        "maxDiffCharacters",
+        defaultSnapshotLimits.maxDiffCharacters,
+      ),
+  };
 }
 
 function activeWorkspacePath(): string | undefined {

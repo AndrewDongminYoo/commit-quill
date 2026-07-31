@@ -1,11 +1,12 @@
 import {
   commit,
+  defaultSnapshotLimits,
   getRepositoryRoot,
   inspectRepository,
   stagePaths,
 } from "../core/git";
 import { detectConvention } from "../core/convention";
-import type { RepositorySnapshot } from "../core/types";
+import type { RepositorySnapshot, SnapshotLimits } from "../core/types";
 import type { CommitGroup, CommitLanguageModel } from "../llm/provider";
 
 export type WorkflowOutcome =
@@ -29,18 +30,32 @@ class WorkflowInvariantError extends Error {
 export class CommitWorkflow {
   readonly model: CommitLanguageModel;
   readonly userInterface: CommitUserInterface;
+  readonly limits: SnapshotLimits;
 
-  constructor(model: CommitLanguageModel, userInterface: CommitUserInterface) {
+  constructor(
+    model: CommitLanguageModel,
+    userInterface: CommitUserInterface,
+    limits: SnapshotLimits = defaultSnapshotLimits,
+  ) {
     this.model = model;
     this.userInterface = userInterface;
+    this.limits = limits;
   }
 
   async run(cwd: string): Promise<WorkflowOutcome> {
-    const snapshot = await inspectRepository(cwd);
+    const snapshot = await inspectRepository(cwd, this.limits);
+    if (snapshot.kind === "clean") {
+      await this.userInterface.showInformation("Nothing to commit.");
+      return { kind: "nothing-to-commit" };
+    }
+
+    // Never let a cap be silent: the user is paying for these tokens and the
+    // subject is only as good as what actually reached the provider.
+    if (snapshot.notices.length > 0) {
+      await this.userInterface.showInformation(snapshot.notices.join(" "));
+    }
+
     switch (snapshot.kind) {
-      case "clean":
-        await this.userInterface.showInformation("Nothing to commit.");
-        return { kind: "nothing-to-commit" };
       case "staged":
         return this.commitStaged(cwd, snapshot);
       case "unstaged":

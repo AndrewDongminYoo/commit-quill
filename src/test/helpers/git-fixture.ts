@@ -1,5 +1,5 @@
 import { execFile as execFileCallback } from "node:child_process";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -29,6 +29,19 @@ export class GitFixture {
 
   async write(path: string, content: string): Promise<void> {
     await writeFile(join(this.repositoryPath, path), content, "utf8");
+  }
+
+  async writeIn(
+    directory: string,
+    name: string,
+    content: string,
+  ): Promise<void> {
+    await mkdir(join(this.repositoryPath, directory), { recursive: true });
+    await this.write(join(directory, name), content);
+  }
+
+  async writeBytes(path: string, content: Buffer): Promise<void> {
+    await writeFile(join(this.repositoryPath, path), content);
   }
 
   async stage(path: string): Promise<void> {

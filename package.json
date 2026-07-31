@@ -78,6 +78,13 @@
           "default": "",
           "scope": "application",
           "description": "The Gemini model name."
+        },
+        "autoCommitMsg.maxDiffCharacters": {
+          "type": "integer",
+          "minimum": 1000,
+          "default": 64000,
+          "scope": "application",
+          "description": "Upper bound on the diff characters sent to the provider. Larger diffs are truncated and you are told when that happens."
         }
       }
     }
