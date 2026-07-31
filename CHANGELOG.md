@@ -2,8 +2,10 @@
 
 All notable changes to the "auto-commit-msg" extension will be documented in this file.
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
-
 ## [Unreleased]
 
-- Initial release
+### Added
+
+- Native OpenAI, Anthropic, and Gemini commit-message generation.
+- Secure provider-key management through VS Code Secret Storage.
+- User-confirmed staged and split-commit workflows.

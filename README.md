@@ -1,71 +1,60 @@
-# auto-commit-msg README
+# Auto Commit Message
 
-This is the README for your extension "auto-commit-msg". After writing up a brief description, we recommend including the following sections.
+Generate reviewed Git commit messages in VS Code with your own OpenAI, Anthropic, or Gemini API key.
 
-## Features
-
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
-
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+The extension never commits without showing an editable commit subject and receiving your confirmation.
 
 ## Requirements
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+- VS Code 1.125 or later.
+- Git available on the VS Code extension host's `PATH`.
+- An API key and model name for OpenAI, Anthropic, or Gemini.
 
-## Extension Settings
+## Setup
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+1. Run **Auto Commit Message: Configure Provider** and select a provider and model name.
+2. Run **Auto Commit Message: Set API Key** and enter the key for that provider.
+3. Run **Auto Commit Message: Generate Commit** from the Command Palette or the Source Control title bar.
 
-For example:
+Model names are stored in VS Code global settings.
 
-This extension contributes the following settings:
+Keys are stored separately per provider in VS Code Secret Storage and are never written to workspace settings.
 
-- `myExtension.enable`: Enable/disable this extension.
-- `myExtension.thing`: Set to `blah` to do something.
+## Commit behavior
 
-## Known Issues
+When staged changes exist, the extension sends only the staged diff, staged file list, and recent commit subjects to the selected provider.
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+It follows a detected stable local commit convention.
 
-## Release Notes
+When no stable convention exists, it asks for a Conventional Commit subject.
 
-Users appreciate release notes as you update your extension.
+The generated subject is always editable before Git commits it.
 
-### 1.0.0
+When no files are staged but the working tree has changes, the extension asks the provider to propose independent file groups.
 
-Initial release of ...
+It shows the proposal and stages and commits each group only after approval.
 
-### 1.0.1
+When the working tree is clean, the command exits before reading an API key or calling a provider.
 
-Fixed issue #.
+## Supported providers
 
-### 1.1.0
+- OpenAI Responses API.
+- Anthropic Messages API.
+- Gemini `generateContent` REST API.
 
-Added features X, Y, and Z.
+Other providers are intentionally out of scope until requested.
 
----
+## Safety
 
-## Following extension guidelines
+- Existing staged changes take precedence over unstaged changes.
+- The extension does not stage unstaged files when staged changes exist.
+- Split groups may contain only paths returned by Git status.
+- A malformed provider response, a Git failure, a missing model or key, or cancellation stops the workflow without creating a new commit.
 
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
+## Development
 
-- [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-- Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-- Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-- Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-- [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-- [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+```shell
+pnpm install
+pnpm test
+pnpm run package
+```
