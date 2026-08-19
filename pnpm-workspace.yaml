@@ -1,2 +1,6 @@
 allowBuilds:
   esbuild: true
+
+overrides:
+  js-yaml: "^4.3.1" # GHSA-5p4m-2wfm-xmqj (high) - Quadratic CPU consumption in !!omap resolution
+  serialize-javascript: "^7.0.6" # GHSA-qj8w-gfj5-8c6v (medium) + GHSA-5c6j-r48x-rmvq (high) - CPU exhaustion and RCE

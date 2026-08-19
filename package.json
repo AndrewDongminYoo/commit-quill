@@ -178,8 +178,7 @@
     "@vscode/test-electron": "^3.0.0"
   },
   "overrides": {
-    "diff": "^8.0.4",
-    "serialize-javascript": "^7.0.6"
+    "diff": "^8.0.4"
   },
   "icon": "media/icon.png"
 }
