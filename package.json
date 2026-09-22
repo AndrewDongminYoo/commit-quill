@@ -177,8 +177,5 @@
     "@vscode/test-cli": "^0.0.15",
     "@vscode/test-electron": "^3.0.0"
   },
-  "overrides": {
-    "diff": "^8.0.4"
-  },
   "icon": "media/icon.png"
 }

@@ -2,5 +2,9 @@ allowBuilds:
   esbuild: true
 
 overrides:
-  js-yaml: "^4.3.1" # GHSA-5p4m-2wfm-xmqj (high) - Quadratic CPU consumption in !!omap resolution
+  "brace-expansion@>=1 <2": ^1.1.18 # GHSA-rgw5-rvv9-x895
+  "brace-expansion@>=2 <3": ^2.1.4 # GHSA-rgw5-rvv9-x895
+  "brace-expansion@>=5 <6": ^5.0.9 # GHSA-rgw5-rvv9-x895
+  "js-yaml@>=4 <5": ^4.3.2 # GHSA-2883-xcg3-v3hh
+  "mocha@11>diff": ^8.0.4 # GHSA-73rr-hh4g-fpgx
   serialize-javascript: "^7.0.6" # GHSA-qj8w-gfj5-8c6v (medium) + GHSA-5c6j-r48x-rmvq (high) - CPU exhaustion and RCE
