@@ -165,7 +165,7 @@
     "verify:models": "node scripts/verify-model-catalog.mjs"
   },
   "devDependencies": {
-    "@types/vscode": "^1.140.0",
+    "@types/vscode": "^1.125.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "24.x",
     "mocha": "^11.7.6",
