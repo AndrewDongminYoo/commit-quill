@@ -25,6 +25,14 @@ updates:
       day: monday
       timezone: Asia/Seoul
     open-pull-requests-limit: 3
+    # Type minor versions must move with the supported VS Code engine (engines.vscode);
+    # vsce rejects newer typings, as the 1.140.0 bump in #6 would have.
+    # update-types limits this to version updates; security updates still open.
+    ignore:
+      - dependency-name: "@types/vscode"
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
     groups:
       npm-minor-patch:
         patterns:
