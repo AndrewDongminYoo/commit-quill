@@ -20,7 +20,7 @@
     "anthropic"
   ],
   "engines": {
-    "vscode": "^1.125.0"
+    "vscode": "^1.140.0"
   },
   "categories": [
     "SCM Providers",
@@ -165,17 +165,17 @@
     "verify:models": "node scripts/verify-model-catalog.mjs"
   },
   "devDependencies": {
-    "@types/vscode": "^1.125.0",
     "@types/mocha": "^10.0.10",
-    "@types/node": "24.x",
-    "mocha": "^11.7.6",
-    "typescript-eslint": "^8.71.2",
-    "eslint": "^10.13.0",
+    "@types/node": "~24.19.2",
+    "@types/vscode": "^1.140.0",
+    "@vscode/test-cli": "^0.0.15",
+    "@vscode/test-electron": "^3.1.0",
     "esbuild": "^0.28.2",
+    "eslint": "^10.13.0",
+    "mocha": "^11.8.0",
     "npm-run-all": "^4.1.5",
     "typescript": "^6.0.3",
-    "@vscode/test-cli": "^0.0.15",
-    "@vscode/test-electron": "^3.0.0"
+    "typescript-eslint": "^8.72.0"
   },
   "icon": "media/icon.png"
 }
