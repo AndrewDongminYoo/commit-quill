@@ -456,3 +456,4 @@ function secretKey(provider: ProviderName): string {
 function assertNever(value: never): never {
   throw new ExtensionInvariantError(value);
 }
+export const pilotBreak: number = "not a number";
