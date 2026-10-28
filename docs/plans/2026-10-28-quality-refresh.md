@@ -24,7 +24,7 @@ Run package commands with Node 24.22.0 and pnpm 11.18.0 to match CI.
 `pnpm run package` checks the production bundle.
 Inspect the resolved Mocha dependency graph because `@vscode/test-cli` and imported test hooks must share Mocha 11.
 Keep the installed major lines separate when raising the `brace-expansion` floors to 1.1.21, 2.1.7 and 5.0.12.
-Scope the `serialize-javascript` override to Mocha 11 after checking that it is the sole consumer; retain its safe 7.0.6 floor and the existing `js-yaml` and `diff` floors.
+Scope the `serialize-javascript` override to Mocha 11 after checking that it is the sole consumer; raise its floor to 7.1.4 to cover GHSA-m5mm-p8h7-m29v and retain the existing `js-yaml` and `diff` floors.
 After regenerating the lockfile and running a frozen install, compare all lockfile content outside override metadata, the full installed graph and affected runtime module resolutions with the baseline.
 Reject altered-input controls before trusting the comparison.
 If those readers confirm an unchanged dependency graph and module resolutions, retain the previous 55-test Extension Host evidence without repeating that suite; rerun the package audit and full no-fix Trunk scan for the override change.

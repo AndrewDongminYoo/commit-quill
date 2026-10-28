@@ -25,7 +25,8 @@ Mocha stays at 11.8.0 because an actual full test run with Mocha 12.0.3 failed w
 The package registry metadata is captured in the review evidence as `dependency-metadata.json`.
 
 The `brace-expansion` override floors move to 1.1.21, 2.1.7 and 5.0.12 within their existing major selectors for GHSA-q2hr-2g5m-vwhr.
-The existing `js-yaml` 4.3.2, Mocha-specific `diff` 8.0.4 and `serialize-javascript` 7.0.6 floors already exceed or meet the corresponding advisory fixes and remain unchanged.
+The existing `js-yaml` 4.3.2 and Mocha-specific `diff` 8.0.4 floors remain unchanged.
+The Mocha-specific `serialize-javascript` floor rises to the already resolved 7.1.4 release because GHSA-m5mm-p8h7-m29v affects versions below 7.1.3.
 `serialize-javascript` is scoped to `mocha@11>serialize-javascript` because Mocha 11 is its only consumer in the resolved graph, requesting `^6.0.2` and resolving 7.1.4.
 Package-manager regeneration changes only override metadata in the lockfile; all other lockfile content, the full installed dependency graph and affected runtime module resolutions remain identical.
 The fresh advisory responses and changed-input controls are captured in the `override-followup-` review evidence.
