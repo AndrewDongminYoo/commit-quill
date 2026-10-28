@@ -11,6 +11,7 @@ Preserve public APIs, generated artifacts and repository-specific boundaries.
 - The full no-fix Trunk scan and declared project gates pass.
 - Changed manifests have package-manager-generated lockfiles under repository policy.
 - Advisory dispositions have specific evidence and affected knowledge claims are reconciled.
+- Offline TruffleHog filesystem findings survive SARIF conversion when decoded values are absent literally, and malformed input fails conversion.
 
 ## Publication
 
@@ -34,6 +35,10 @@ The fresh advisory responses and changed-input controls are captured in the `ove
 The existing Trunk linters move to oxipng 10.2.1, OSV-Scanner 2.7.0 and TruffleHog 3.99.7.
 The remaining enabled linter versions and the existing CLI and plugin pins remain unchanged.
 Pinact remains `4.1.1!` with both commands enabled.
+The inherited TruffleHog command used `--only-verified`, which performs provider verification and does not meet the offline candidate-detection contract.
+The local override uses `--no-verification --no-update` and a repository-owned filesystem JSONL reader, retaining the inherited SARIF output, success codes `0` and `183`, and `copy_targets` sandbox.
+The reader keeps encoded, unreadable and binary-file findings at file level when a literal location is unavailable, uses one-based literal locations and fails malformed conversion without exposing raw or redacted values.
+Its 10 standard-library tests run in CI without an Extension Host or provider access.
 The configured oxipng optimizer recompresses `media/banner.png` losslessly to satisfy the refreshed formatter.
 An independent ImageMagick reader verifies identical decoded RGBA pixels, dimensions, bit depth and color-management metadata, after rejecting a changed-pixel control.
 

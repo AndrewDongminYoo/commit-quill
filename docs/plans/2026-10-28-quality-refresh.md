@@ -14,6 +14,7 @@
 - `pnpm test`
 - `pnpm run package`
 - `pnpm audit --json`
+- `python3 -m unittest discover -s .trunk/configs/tests -p 'test_trufflehog_to_sarif.py'`
 - `trunk check --all --no-fix --jobs=2`
 - `git diff --check`
 
@@ -29,3 +30,13 @@ After regenerating the lockfile and running a frozen install, compare all lockfi
 Reject altered-input controls before trusting the comparison.
 If those readers confirm an unchanged dependency graph and module resolutions, retain the previous 55-test Extension Host evidence without repeating that suite; rerun the package audit and full no-fix Trunk scan for the override change.
 Record actual command exits and limitations in the visible review evidence.
+
+## Security Reader Follow-up
+
+Replace the inherited network-verifying `--only-verified` filesystem command with `--no-verification --no-update` and the reviewed local JSONL-to-SARIF reader.
+Preserve the inherited SARIF output, success codes `0` and `183`, and `copy_targets` sandbox.
+Run the encoded-finding regression against the inherited reader and observe its failure before running all 10 local reader tests.
+Use the cached TruffleHog 3.99.7 binary with never-issued synthetic fixtures to compare encoded, literal and clean results through both readers without provider verification.
+Retain only sanitized findings metadata and remove temporary fixtures and raw diagnostics.
+After a heavy execution slot is available, run the configured-Trunk encoded, literal and clean controls and the full no-fix scan.
+Keep the existing dependency graph, lockfile and runtime-resolution evidence because this follow-up does not change their inputs.

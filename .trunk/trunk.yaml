@@ -35,6 +35,16 @@ lint:
     - prettier@3.9.10
     - trufflehog@3.99.7
     - yamllint@1.38.0
+  definitions:
+    - name: trufflehog
+      commands:
+        - name: lint
+          run: trufflehog filesystem --json --fail --no-verification --no-update ${target}
+          direct_configs:
+            - .trunk/configs/trufflehog_to_sarif.py
+          parser:
+            runtime: python
+            run: python3 .trunk/configs/trufflehog_to_sarif.py
 actions:
   enabled:
     - git-lfs
