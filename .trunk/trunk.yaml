@@ -28,7 +28,7 @@ lint:
     - oxipng@10.2.1
     - actionlint@1.7.12
     - eslint@10.13.0
-    - checkov@3.3.30
+    - checkov@3.4.0
     - git-diff-check
     - markdownlint@0.50.0
     - osv-scanner@2.7.0
