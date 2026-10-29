@@ -35,8 +35,15 @@ Record actual command exits and limitations in the visible review evidence.
 
 Replace the inherited network-verifying `--only-verified` filesystem command with `--no-verification --no-update` and the reviewed local JSONL-to-SARIF reader.
 Preserve the inherited SARIF output, success codes `0` and `183`, and `copy_targets` sandbox.
-Run the encoded-finding regression against the inherited reader and observe its failure before running all 10 local reader tests.
+Run the encoded-finding regression against the inherited reader and observe its failure before running all 13 local reader tests.
 Use the cached TruffleHog 3.99.7 binary with never-issued synthetic fixtures to compare encoded, literal and clean results through both readers without provider verification.
 Retain only sanitized findings metadata and remove temporary fixtures and raw diagnostics.
 After a heavy execution slot is available, run the configured-Trunk encoded, literal and clean controls and the full no-fix scan.
 Keep the existing dependency graph, lockfile and runtime-resolution evidence because this follow-up does not change their inputs.
+
+## Source-Line Repair
+
+The current reader uses the independently reviewed `localizations` repair at `b47e59659a886ad673a2f4a9bed6a3bf4986615b`.
+It prefers a positive integer filesystem line only when the literal starts on that line.
+Invalid hints retain literal-search and file-level fallbacks.
+Thirteen CLI tests cover repeated and out-of-order findings in addition to the existing lossless conversion cases.
