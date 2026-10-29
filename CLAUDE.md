@@ -22,6 +22,15 @@ pnpm run watch                    # esbuild --watch + tsc --noEmit --watch
 
 `pnpm test` runs `pretest` first, which does `compile-tests` (`tsc -p . --outDir out`) plus `compile` and `lint`.
 
+The TruffleHog filesystem reader has a separate standard-library test suite that CI runs before installing package dependencies:
+
+```shell
+python3 -m unittest discover -s .trunk/configs/tests -p 'test_trufflehog_to_sarif.py'
+```
+
+`.trunk/trunk.yaml` runs TruffleHog offline with `--no-verification --no-update` and converts its filesystem JSONL through `.trunk/configs/trufflehog_to_sarif.py`.
+The reader retains findings at file level when decoded values have no literal source location, omits secret values from SARIF messages and fails malformed input instead of emitting clean SARIF.
+
 To run a single test file without booting the Extension Host — works for everything under `src/test/` except `extension.test.ts`, which imports `vscode`:
 
 ```shell

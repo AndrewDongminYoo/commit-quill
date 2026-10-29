@@ -8,7 +8,7 @@ The extension never commits without showing an editable commit subject and recei
 
 ## Requirements
 
-- VS Code 1.125 or later.
+- VS Code 1.140 or later.
 - Git available on the VS Code extension host's `PATH`.
 - An API key for OpenAI, Anthropic, or Gemini.
 
