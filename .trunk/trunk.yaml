@@ -2,7 +2,7 @@
 # To learn more about the format of this file, see https://docs.trunk.io/reference/trunk-yaml
 version: 0.1
 cli:
-  version: 1.25.0
+  version: 1.29.0
 plugins:
   sources:
     - id: trunk
@@ -15,27 +15,11 @@ runtimes:
     - python@3.14.4
 # This is the section where you manage your linters. (https://docs.trunk.io/check/configuration)
 lint:
-  ignore:
-    - linters: [markdownlint]
-      paths: [CHANGELOG.md]
-  disabled:
-    - grype
-    - dart
-    - trivy
-  enabled:
-    - pinact@4.1.1!:
-        commands: [lint, upgrade]
-    - oxipng@10.2.1
-    - actionlint@1.7.12
-    - eslint@10.13.0
-    - checkov@3.4.0
-    - git-diff-check
-    - markdownlint@0.50.0
-    - osv-scanner@2.7.0
-    - prettier@3.9.10
-    - trufflehog@3.99.7
-    - yamllint@1.38.0
   definitions:
+    - name: pinact
+      commands:
+        - name: upgrade
+          enabled: true
     - name: trufflehog
       commands:
         - name: lint
@@ -45,6 +29,25 @@ lint:
           parser:
             runtime: python
             run: python3 .trunk/configs/trufflehog_to_sarif.py
+  disabled:
+    - dart
+    - grype
+    - trivy
+  enabled:
+    - actionlint@1.7.12
+    - checkov@3.4.3
+    - eslint@10.14.0
+    - git-diff-check
+    - markdownlint@0.50.0
+    - osv-scanner@2.7.0
+    - oxipng@10.2.1
+    - pinact@4.1.1!
+    - prettier@3.9.10
+    - trufflehog@3.99.8
+    - yamllint@1.38.0
+  ignore:
+    - linters: [markdownlint]
+      paths: [CHANGELOG.md]
 actions:
   enabled:
     - git-lfs
