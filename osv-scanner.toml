@@ -1,0 +1,7 @@
+[[IgnoredVulns]]
+id = "GHSA-3g3m-2fjr-6pw4"
+reason = "glob@10.5.0 and glob@13.0.7 have no patch within their installed major lines as of 2026-11-17; the first patched version is 14.0.2. Dependency paths: mocha > glob and @vscode/test-cli > glob or c8 > test-exclude > glob. Reachability evidence: pnpm why glob --depth 8 and inspection of mocha/lib/cli/lookup-files.js, @vscode/test-cli/out/cli/gatherFiles.mjs, and test-exclude/index.js show test discovery with no AbortSignal option. Approved by Dongmin on 2026-11-17 for these versions. Re-evaluation owner: Dongmin; re-evaluate when test tooling or resolved versions change."
+
+[[IgnoredVulns]]
+id = "GHSA-g3hv-75wg-m249"
+reason = "minimatch@9.0.9 and minimatch@10.2.6 have no patch within their installed major lines as of 2026-11-17; the first patched version is 11.0.1. Dependency paths: mocha > minimatch or glob > minimatch, and @vscode/test-cli > minimatch or c8 > test-exclude > minimatch or glob > minimatch. Reachability evidence: pnpm why minimatch --depth 8 and inspection of .vscode-test.mjs and @vscode/test-cli/out/cli/gatherFiles.mjs show the fixed repository-controlled out/test/**/*.test.js pattern; glob enables optimizationLevel 2, so the vulnerable code remains reachable, but the current test configuration does not accept untrusted patterns. Approved by Dongmin on 2026-11-17 for these versions. Re-evaluation owner: Dongmin; re-evaluate when test patterns, tooling, or resolved versions change."
